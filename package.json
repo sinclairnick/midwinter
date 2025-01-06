@@ -1,0 +1,44 @@
+{
+  "name": "midwinter",
+  "description": "A next-gen middleware engine built for the WinterCG environments.",
+  "version": "0.2.0",
+  "author": {
+    "name": "Nick Sinclair",
+    "email": "nicksinclair@xtra.co.nz",
+    "url": "https://github.com/sinclairnick"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "zod": "^3.23.8"
+  },
+  "keywords": [
+    "midwinter",
+    "wintercg",
+    "middleware",
+    "engine"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "private": false,
+  "scripts": {
+    "build": "tsup",
+    "check": "tsc --noEmit",
+    "publish-pkg": "pnpm run build && pnpm publish --access=public --no-git-checks",
+    "test": "vitest"
+  },
+  "sideEffects": false,
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "radix3": "^1.1.2",
+    "schema-shift": "^0.4.0",
+    "urlpattern-polyfill": "^10.0.0"
+  }
+}

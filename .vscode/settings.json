@@ -1,0 +1,4 @@
+{
+		"prettier.tabWidth": 2,
+		"typescript.tsdk": "node_modules/typescript/lib"
+}
