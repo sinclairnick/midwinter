@@ -151,6 +151,26 @@ describe("Midwinter", () => {
       }>();
     });
 
+    test("Infers optional ctx update correctly (as partial)", () => {
+      const mid = new Midwinter();
+
+      const middleware = mid.define((req, ctx) => {
+        if (Math.random()) {
+          return { bar: 1 };
+        }
+      });
+
+      expectTypeOf<InferMiddlewareCtxUpdate<typeof middleware>>().toMatchTypeOf<
+        | {
+            bar: number;
+          }
+        | undefined
+      >();
+      expectTypeOf<NextMiddlewareContext<typeof middleware>>().toMatchTypeOf<{
+        bar?: number;
+      }>();
+    });
+
     test("Uses initial ctx", () => {
       type Initial = {
         foo: boolean;

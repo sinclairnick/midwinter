@@ -9,8 +9,7 @@ export type MiddlewareReturn<TCtxUpdate extends AnyCtx | void = void> =
   | TCtxUpdate
   | Response
   | ResponseHandler
-  | void
-  | undefined;
+  | void;
 
 export type AnyMiddleware = Middleware<any, any, any, any>;
 
@@ -38,7 +37,7 @@ export type RequestHandler<TMeta extends AnyMeta = AnyMeta> = ((
 ) => Promise<Response>) & { meta: TMeta };
 
 export type Middleware<
-  TCtxUpdate extends AnyCtx | void = AnyCtx,
+  TCtxUpdate extends AnyCtx | void | undefined = AnyCtx,
   TCtx extends AnyCtx = AnyCtx,
   TMetaUpdate extends AnyMeta | void = void,
   TMetaIn extends AnyMeta = AnyMeta
@@ -50,5 +49,7 @@ export type NextMiddlewareContext<TMiddleware extends AnyMiddleware> =
   TMiddleware extends Middleware<infer $Updates, infer $Ctx, any, any>
     ? void extends $Updates
       ? $Ctx
+      : undefined extends $Updates
+      ? MergeObjectsShallow<$Ctx, Partial<$Updates>>
       : MergeObjectsShallow<$Ctx, $Updates>
     : never;
