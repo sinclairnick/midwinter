@@ -63,7 +63,7 @@ export class Midwinter<
 
   // Both
   define<
-    TCtxUpdate extends AnyCtx | void = void,
+    TCtxUpdate extends AnyCtx | void = AnyCtx,
     TCtxIn extends AnyCtx = TCtx,
     TMetaUpdate extends AnyMeta | void = void
   >(
@@ -87,21 +87,17 @@ export class Midwinter<
     return middleware;
   }
 
-  end(
-    middleware: EndMiddlewareHandler<TCtx, TMeta>
-  ): RequestHandler<TCtx, TMeta> {
-    const handler: EndMiddlewareHandler<TCtx, TMeta> = async (
-      request,
-      ctx,
-      meta
-    ) => {
+  end(middleware: EndMiddlewareHandler<TCtx, TMeta>): RequestHandler<TMeta> {
+    const handler = async (request: Request) => {
       const req = fixRequestClone(request);
-      let _ctx = { ...ctx };
+
+      let _ctx = {} as TCtx;
+
       const executor = new MiddlewareExecutor(this.middlewares);
 
       let response: Response | undefined;
 
-      for await (const result of executor.pre(req, ctx, meta)) {
+      for await (const result of executor.pre(req, _ctx, this.meta)) {
         switch (result.type) {
           case "response": {
             response = response;
@@ -114,7 +110,7 @@ export class Midwinter<
       }
 
       if (response == null) {
-        response = await middleware(req, ctx, meta);
+        response = await middleware(req, _ctx, this.meta);
       }
 
       return executor.post(response);

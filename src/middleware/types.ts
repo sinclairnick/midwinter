@@ -1,6 +1,5 @@
-import { Awaitable } from "vitest";
 import { AnyCtx } from "..";
-import { AnyMeta, MergeObjectsShallow } from "../types/util";
+import { AnyMeta, Awaitable, MergeObjectsShallow } from "../types/util";
 
 export type ResponseHandler = (
   response: Response
@@ -34,10 +33,9 @@ type MiddlewareHandler<
   meta: Readonly<TMetaIn>
 ) => Awaitable<MiddlewareReturn<TCtxUpdate>>;
 
-export type RequestHandler<
-  TCtx extends AnyCtx = AnyCtx,
-  TMeta extends AnyMeta = AnyMeta
-> = EndMiddlewareHandler<TCtx, TMeta> & { meta: TMeta };
+export type RequestHandler<TMeta extends AnyMeta = AnyMeta> = ((
+  request: Request
+) => Promise<Response>) & { meta: TMeta };
 
 export type Middleware<
   TCtxUpdate extends AnyCtx | void = AnyCtx,

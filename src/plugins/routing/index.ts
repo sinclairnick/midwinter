@@ -2,7 +2,6 @@ import { Midwinter } from "@/midwinter/midwinter";
 import { createRouter as createRadixRouter } from "./routers/radix";
 import { createRouter as createLinearRouter } from "./routers/linear";
 import { RequestHandler } from "@/middleware/types";
-import { AnyCtx } from "@/types/util";
 import { RouteInput } from "./routers/types";
 
 export type RoutingInitOpts = {
@@ -15,15 +14,16 @@ export type RoutingOpts = {
   prefix?: string;
 };
 
-export type RouteHandlerList = RequestHandler<any, RoutingOpts | AnyCtx>[];
-export type RouteHandlerMap = Record<
-  string,
-  RequestHandler<any, RoutingOpts | AnyCtx>
->;
+export type RouteHandlerList = RequestHandler[];
+export type RouteHandlerMap = Record<string, RequestHandler>;
 
 export type RouterOpts = {
   onNotFound?: (request: Request) => Response;
   onError?: (error: unknown) => Response;
+  /**
+   * @default false
+   */
+  keepTrailingSlashes?: boolean;
 };
 
 export const init = (opts: RoutingInitOpts = {}) => {
@@ -46,16 +46,24 @@ export const init = (opts: RoutingInitOpts = {}) => {
       onError = () => {
         return Response.json({ code: "SERVER_EXCEPTION" }, { status: 500 });
       },
+      keepTrailingSlashes = false,
     } = opts;
 
-    const _routes: RouteInput<RequestHandler<any, RoutingOpts | AnyCtx>>[] = (
+    const _routes: RouteInput<RequestHandler>[] = (
       Array.isArray(routes) ? routes : Object.values(routes)
     ).map((route) => {
       const { method, path, prefix } = route.meta ?? {};
 
+      // TODO: Add warnings/validation
+
+      const _path =
+        typeof prefix === "string" && prefix.length > 0
+          ? `${prefix}${path}`
+          : String(path);
+
       return {
         methods: Array.isArray(method) ? method : [String(method)],
-        path: `${prefix}${path}`,
+        path: keepTrailingSlashes ? _path : _path.replace(/\/$/, ""),
         payload: route,
       };
     });
@@ -67,7 +75,7 @@ export const init = (opts: RoutingInitOpts = {}) => {
         const handler = router.match(request);
 
         if (handler) {
-          return await handler(request, {}, handler.meta);
+          return await handler(request);
         }
 
         return onNotFound(request);
