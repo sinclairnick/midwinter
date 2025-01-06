@@ -1,7 +1,8 @@
-import { ValidOpts } from "./types";
+import { OutputHandler, ValidOpts } from "./types";
 import { makeParseFn } from "./parsing";
-import z from "zod";
 import { Midwinter } from "../../midwinter/midwinter";
+import { parse } from "schema-shift";
+import { AnyCtx, AnyMeta, EndMiddlewareHandler } from "@/index";
 
 const mid = new Midwinter();
 
@@ -25,5 +26,26 @@ export const init = () => {
     }, opts);
   };
 
-  return { valid, validLazy };
+  const output =
+    <
+      TValue extends any = unknown,
+      TCtx extends AnyCtx = AnyCtx,
+      TMeta extends AnyMeta = AnyMeta
+    >(
+      handler: OutputHandler<TValue, TCtx, TMeta>,
+      opts?: ResponseInit
+    ): EndMiddlewareHandler<TCtx, TMeta> =>
+    async (req, ctx, meta) => {
+      const data = await handler(req, ctx, meta);
+
+      if (data instanceof Response) {
+        return data;
+      }
+
+      const outData = meta.Output ? await parse(meta.Output, data) : data;
+
+      return Response.json(outData, opts);
+    };
+
+  return { valid, validLazy, output };
 };

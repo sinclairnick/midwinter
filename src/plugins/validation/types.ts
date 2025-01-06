@@ -1,3 +1,4 @@
+import { AnyCtx, AnyMeta, Awaitable } from "@/types/util";
 import { Parser } from "schema-shift";
 
 export type ValidReturn<
@@ -44,6 +45,7 @@ export type ValidOpts = {
   Params?: Parser;
   Body?: Parser;
   Headers?: Parser;
+  Output?: Parser;
 };
 
 export type Default = {
@@ -52,3 +54,13 @@ export type Default = {
   Body: unknown;
   Headers: Record<string, string | undefined>;
 };
+
+export type OutputHandler<
+  TValue extends any = unknown,
+  TCtx extends AnyCtx = AnyCtx,
+  TMetaIn extends AnyMeta = AnyMeta
+> = (
+  request: Request,
+  ctx: TCtx,
+  meta: Readonly<TMetaIn>
+) => Awaitable<TValue | Response>;

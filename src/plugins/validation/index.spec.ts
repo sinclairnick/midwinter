@@ -1,5 +1,5 @@
-import { describe, expectTypeOf, test } from "vitest";
-import { z } from "zod";
+import { describe, expect, expectTypeOf, test } from "vitest";
+import { z, ZodError } from "zod";
 import { init } from ".";
 import { AnyMeta } from "@/types/util";
 import { InferCtx, InferMeta } from "@/midwinter/infer";
@@ -9,7 +9,7 @@ import { Midwinter } from "../../midwinter/midwinter";
 describe("valid", () => {
   const mid = new Midwinter();
 
-  const { valid } = init();
+  const { valid, output } = init();
 
   describe("Types", () => {
     test("Initially has no type info", () => {
@@ -104,12 +104,57 @@ describe("valid", () => {
     const WithId = z.object({ id: z.string() });
     const url = "https://test.com";
 
-    test("Parses query", async () => {
+    test("Query: throws on invalid", async () => {
+      const fetch = mid.use(valid({ Query: WithId })).end((req, { query }) => {
+        return Response.json({});
+      });
+
+      await expect(() => fetch(new Request(url))).rejects.toThrowError(
+        ZodError
+      );
+    });
+
+    test("Query: OK on valid", async () => {
+      const fetch = mid.use(valid({ Query: WithId })).end((req, { query }) => {
+        return Response.json({});
+      });
+
+      await expect(fetch(new Request(url + "?id=123"))).resolves.toBeInstanceOf(
+        Response
+      );
+    });
+
+    test("Output: throws on invalid", async () => {
+      const fetch = mid.use(valid({ Output: WithId })).end(
+        output((req, ctx, meta) => {
+          return { id: 23 };
+        })
+      );
+
+      await expect(() => fetch(new Request(url))).rejects.toThrowError(
+        ZodError
+      );
+    });
+
+    test("Output: throws on invalid", async () => {
       const fetch = mid
-        .use(valid({ Query: WithId }))
-        .end(() => Response.json({}));
+        .use(
+          valid({
+            Output: z.object({
+              id: z.number().transform(String),
+            }),
+          })
+        )
+        .end(
+          output((req, ctx, meta) => {
+            return { id: 23 };
+          })
+        );
 
       const res = await fetch(new Request(url));
+      const body = await res.json();
+
+      expect(body.id).toBe("23");
     });
   });
 
