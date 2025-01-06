@@ -27,15 +27,13 @@ describe("Runtime", () => {
 
           headers.set("X-Powered-by", opts.name);
 
-          console.log(headers.get("X-Powered-By"));
-
           return new Response(response.body, {
             headers,
           });
         };
       }) satisfies Middleware;
 
-    const mid = poweredBy({ name: "Webroute" });
+    const mid = poweredBy({ name: "Midwinter" });
 
     const responseHandler = mid();
     expect(responseHandler).toBeTypeOf("function");
@@ -43,6 +41,6 @@ describe("Runtime", () => {
     const result = responseHandler(new Response());
 
     const headers = result.headers;
-    expect(headers.get("x-powered-by")).toBe("Webroute");
+    expect(headers.get("x-powered-by")).toBe("Midwinter");
   });
 });
