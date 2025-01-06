@@ -1,6 +1,9 @@
 import { describe, expectTypeOf, test } from "vitest";
 import { Middleware } from "./types";
-import { InferMiddlewareCtxUpdate, InferMiddlewareReturn } from "@/middleware/infer";
+import {
+  InferMiddlewareCtxUpdate,
+  InferMiddlewareReturn,
+} from "@/middleware/infer";
 
 describe("Types", () => {
   test("Allows empty fns", () => {
@@ -80,9 +83,9 @@ describe("Types", () => {
   });
 
   test("Disllows return response handler with random first param", () => {
-    // @ts-expect-error
     const middleware = ((req: Request) => {
       return (response: number) => new Response();
+      // @ts-expect-error
     }) satisfies Middleware;
 
     expectTypeOf(middleware).not.toMatchTypeOf<Middleware>();
