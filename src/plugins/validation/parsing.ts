@@ -32,15 +32,21 @@ export const parseQuery = ((req, opts) => {
 
 export const parseParams = ((req, opts) => {
   const url = new URL(req.url);
+  const map: Record<string, any> = {};
 
   if (opts.path == null) {
-    throw "Cannot parse params without a known `path` string.";
+    if (opts.Params) {
+      console.warn(
+        "Unable to parse params: could not find a `path` for this request handler."
+      );
+    }
+
+    return map;
   }
 
   const patternParts = opts.path?.split("/");
   const PathParts = url.pathname.split("/");
 
-  const map: Record<string, any> = {};
   for (let i = 0; i <= patternParts.length; i++) {
     const pattern: string | undefined = patternParts[i];
     const Path: string | undefined = PathParts[i];
@@ -101,10 +107,10 @@ export const makeParseFn = <T extends ParseOpts>(req: Request, opts: T) => {
     }
 
     const [_query, _params, _headers, _body] = await Promise.all([
-      parsers.query,
-      parsers.params,
-      parsers.headers,
-      parsers.body,
+      parsers.query(),
+      parsers.params(),
+      parsers.headers(),
+      parsers.body(),
     ]);
 
     return {
