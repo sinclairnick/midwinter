@@ -35,14 +35,16 @@ export class Midwinter<
     TCtxUpdate extends AnyCtx | void = void,
     TMetaUpdate extends AnyMeta | void = void
   >(middleware: Middleware<TCtxUpdate, TCtx, TMetaUpdate, TMeta>) {
+    let meta = { ...this.meta };
+
     if ("meta" in middleware && middleware.meta != null) {
-      this.meta = { ...this.meta, ...middleware.meta } as any;
+      meta = { ...meta, ...middleware.meta } as any;
     }
 
     return new Midwinter<
       NextMiddlewareContext<typeof middleware>,
       void extends TMetaUpdate ? TMeta : MergeObjectsShallow<TMeta, TMetaUpdate>
-    >(this.meta as any, [...this.middlewares, middleware]);
+    >(meta as any, [...this.middlewares, middleware]);
   }
 
   /**
