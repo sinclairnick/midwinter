@@ -12,6 +12,10 @@ export type MergeObjectsShallow<A, B> = Simplify<
   } & B
 >;
 
+export type UnknownValues<T> = {
+  [Key in keyof T]: unknown;
+};
+
 export type AnyCtx =
   // This value param must be unknown otherwise arbitrary functions are accepted
   Record<PropertyKey, unknown>;
