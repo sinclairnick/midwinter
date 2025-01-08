@@ -7,6 +7,7 @@ import {
 } from "@/middleware/infer";
 import { NextMiddlewareContext } from "@/middleware/types";
 import { AnyMeta } from "@/types/util";
+import { InferCtx } from "./infer";
 
 describe("Midwinter", () => {
   describe("Use", () => {
@@ -126,6 +127,17 @@ describe("Midwinter", () => {
 
       next.use(myMid).use(myMid).use(myMid).use(myMid).use(myMid).use(myMid);
     });
+
+    test("Disallows arbitrary ctx type", () => {
+      const mid = new Midwinter<{ foo: boolean }>();
+
+      // @ts-expect-error
+      const middleware = mid.use((req, ctx: { baz: boolean }) => {});
+
+      expectTypeOf<InferCtx<typeof middleware>>().toMatchTypeOf<{
+        foo: boolean;
+      }>();
+    });
   });
 
   describe("Define", () => {
@@ -134,6 +146,59 @@ describe("Midwinter", () => {
 
       const middleware = mid.define((req, ctx) => {
         return;
+      });
+    });
+
+    test("Allows partial ctx specification", () => {
+      const mid = new Midwinter<{ foo: boolean; bar: boolean }>();
+
+      const middleware = mid.define((req, ctx: { foo: boolean }) => {
+        //
+      });
+
+      const middleware2 = mid.use(middleware);
+
+      expectTypeOf<InferMiddlewareCtxIn<typeof middleware>>().toMatchTypeOf<{
+        foo: boolean;
+      }>();
+      expectTypeOf<
+        InferMiddlewareCtxIn<typeof middleware>
+      >().not.toMatchTypeOf<{
+        bar: boolean;
+      }>();
+
+      expectTypeOf<InferCtx<typeof middleware2>>().toMatchTypeOf<{
+        foo: boolean;
+        bar: boolean;
+      }>();
+    });
+
+    test("Allows override ctx", () => {
+      const mid = new Midwinter<{ foo: boolean }>();
+
+      const middleware = mid.define((req, ctx: { baz: boolean }) => {
+        //
+      });
+
+      expectTypeOf<InferMiddlewareCtxIn<typeof middleware>>().toMatchTypeOf<{
+        baz: boolean;
+      }>();
+      expectTypeOf<
+        InferMiddlewareCtxIn<typeof middleware>
+      >().not.toMatchTypeOf<{
+        bar: boolean;
+      }>();
+    });
+
+    test("Uses unknown types, known keys, for meta param", () => {
+      const mid = new Midwinter();
+
+      const middleware = mid.define(() => {}, {
+        foo: true,
+      });
+
+      const middleware2 = mid.use(middleware).use((_, __, meta) => {
+        expectTypeOf<(typeof meta)["foo"]>().toEqualTypeOf<unknown>();
       });
     });
 
