@@ -38,19 +38,24 @@ const response = await handler(new Request(opts));
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
-2. [Plugins](#plugins)
-
-   2.1. [Official Plugins](#official-plugins)
-
-   ..2.1.1. [Validation](#validation)
-
-   ..2.1.2. [Routing](#routing)
-
-3. [API Reference](#api-reference)
-   - [`.define()`](#definemiddleware)
-   - [`.use()`](#usemiddleware)
-   - [`.end()`](#endmiddleware)
+- [Introduction](#introduction)
+  - [How does Midwinter work?](#how-does-midwinter-work-)
+  - [Key Concepts](#key-concepts)
+- [Middleware Guide](#middleware-guide)
+  - [Return value behaviour](#return-value-behaviour)
+  - [Request Context](#request-context)
+  - [Listening to responses](#listening-to-responses)
+  - [Chaining](#chaining)
+  - [Ending a pipeline: returning a response](#ending-a-pipeline--returning-a-response)
+  - [Metadata](#metadata)
+- [Plugins](#plugins)
+  - [Official Plugins](#official-plugins)
+  - [Routing](#routing)
+  - [Validation](#validation)
+- [API Reference](#api-reference)
+  - [`.define(middleware)`](#-define-middleware--)
+  - [`.use(middleware)`](#-use-middleware--)
+  - [`.end(middleware)`](#-end-middleware--)
 
 ## Introduction
 
@@ -207,7 +212,7 @@ new Midwinter()
   });
 ```
 
-#### Via mutation
+##### Via mutation
 
 Much of the time, we only need to return one of the above three return value possibilities: object, function or response.
 
