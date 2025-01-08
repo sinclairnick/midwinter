@@ -1,5 +1,10 @@
 import { AnyCtx } from "..";
-import { AnyMeta, Awaitable, MergeObjectsShallow } from "../types/util";
+import {
+  AnyMeta,
+  Awaitable,
+  MergeObjectsShallow,
+  UnknownValues,
+} from "../types/util";
 
 export type ResponseHandler = (
   response: Response
@@ -29,7 +34,7 @@ type MiddlewareHandler<
 > = (
   request: Request,
   ctx: TCtx,
-  meta: Readonly<TMetaIn>
+  meta: Readonly<UnknownValues<TMetaIn>>
 ) => Awaitable<MiddlewareReturn<TCtxUpdate>>;
 
 export type RequestHandler<TMeta extends AnyMeta = AnyMeta> = ((
