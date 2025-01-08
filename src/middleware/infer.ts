@@ -5,10 +5,10 @@ export type InferMiddlewareReturn<T extends AnyMiddleware> = Awaited<
 >;
 
 export type InferMiddlewareCtxIn<T extends AnyMiddleware> =
-  T extends Middleware<any, infer R> ? R : never;
+  T extends Middleware<any, infer R, any, any> ? R : never;
 
 export type InferMiddlewareCtxUpdate<T extends AnyMiddleware> =
-  T extends Middleware<infer R> ? R : never;
+  T extends Middleware<infer R, any, any, any> ? R : never;
 
 export type InferMiddlewareMetaIn<T extends AnyMiddleware> =
   T extends Middleware<any, any, any, infer R> ? R : never;
