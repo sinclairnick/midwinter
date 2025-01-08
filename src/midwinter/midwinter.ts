@@ -90,6 +90,8 @@ export class Midwinter<
   }
 
   end(middleware: EndMiddlewareHandler<TCtx, TMeta>): RequestHandler<TMeta> {
+    const meta = Object.freeze(this.meta);
+
     const handler = async (request: Request) => {
       const req = fixRequestClone(request);
 
@@ -99,7 +101,7 @@ export class Midwinter<
 
       let response: Response | undefined;
 
-      for await (const result of executor.pre(req, _ctx, this.meta)) {
+      for await (const result of executor.pre(req, _ctx, meta)) {
         switch (result.type) {
           case "response": {
             response = response;
@@ -112,12 +114,12 @@ export class Midwinter<
       }
 
       if (response == null) {
-        response = await middleware(req, _ctx, this.meta);
+        response = await middleware(req, _ctx, meta);
       }
 
       return executor.post(response);
     };
 
-    return Object.assign(handler, { meta: this.meta });
+    return Object.assign(handler, { meta });
   }
 }
