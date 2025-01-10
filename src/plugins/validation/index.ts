@@ -1,8 +1,7 @@
 import { OutputHandler, ValidOpts } from "./types";
 import { makeParseFn } from "./parsing";
-import { Midwinter } from "../../midwinter/midwinter";
 import { parse } from "schema-shift";
-import { AnyCtx, AnyMeta, EndMiddlewareHandler } from "@/index";
+import { Midwinter, AnyCtx, AnyMeta, EndMiddlewareHandler } from "midwinter";
 
 export const init = () => {
   /**

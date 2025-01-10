@@ -10,7 +10,8 @@
     "skipLibCheck": true,
     "moduleResolution": "Bundler",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "midwinter": ["./src"]
     }
   },
   "include": ["src/**/*.ts"],

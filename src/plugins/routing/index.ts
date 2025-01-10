@@ -1,4 +1,4 @@
-import { Midwinter } from "@/midwinter/midwinter";
+import { Midwinter } from "midwinter";
 import { createRouter as createRadixRouter } from "./routers/radix";
 import { createRouter as createLinearRouter } from "./routers/linear";
 import { RequestHandler } from "@/middleware/types";
@@ -8,9 +8,20 @@ export type RoutingInitOpts = {
   createRouter?: typeof createLinearRouter;
 };
 
+export type HttpVerb =
+  | "get"
+  | "post"
+  | "put"
+  | "patch"
+  | "delete"
+  | "options"
+  | "head";
+
+export type HttpMethodInput = HttpVerb | Uppercase<HttpVerb> | (string & {});
+
 export type RoutingOpts = {
   path?: string;
-  method?: string[] | string;
+  method?: HttpMethodInput[] | HttpMethodInput;
   prefix?: string;
 };
 
@@ -30,7 +41,7 @@ export const init = (opts: RoutingInitOpts = {}) => {
   const { createRouter = createRadixRouter } = opts;
 
   const routing = <const T extends RoutingOpts>(config: T) => {
-    return new Midwinter({ config });
+    return new Midwinter(config);
   };
 
   const router = (

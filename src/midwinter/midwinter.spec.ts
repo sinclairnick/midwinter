@@ -122,10 +122,10 @@ describe("Midwinter", () => {
     });
 
     test("Allows merging midwinters", async () => {
-      const app1 = new Midwinter().use(() => {
+      const app1 = new Midwinter({ a: 1 }).use(() => {
         return { foo: true };
       });
-      const app2 = new Midwinter().use(() => {
+      const app2 = new Midwinter({ b: 2 }).use(() => {
         return { bar: true };
       });
 
