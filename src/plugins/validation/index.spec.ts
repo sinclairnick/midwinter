@@ -1,7 +1,6 @@
 import { describe, expect, expectTypeOf, test } from "vitest";
 import { z, ZodError } from "zod";
 import { init } from ".";
-import { AnyMeta } from "@/types/util";
 import { InferCtx, InferMeta } from "@/midwinter/infer";
 import { ParseInputsFn } from "./types";
 import { Midwinter } from "../../midwinter/midwinter";
@@ -17,7 +16,7 @@ describe("valid", () => {
 
       type Meta = InferMeta<typeof middleware>;
 
-      expectTypeOf<Meta>().toEqualTypeOf<AnyMeta>();
+      expectTypeOf<Meta>().toEqualTypeOf<{}>();
     });
 
     test("Initially uses default schema info", () => {
@@ -172,7 +171,7 @@ describe("validLazy", () => {
 
       type Meta = InferMeta<typeof middleware>;
 
-      expectTypeOf<Meta>().toEqualTypeOf<AnyMeta>();
+      expectTypeOf<Meta>().toEqualTypeOf<{}>();
     });
 
     test("Initially uses default schema info", () => {
