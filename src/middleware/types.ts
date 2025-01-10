@@ -40,9 +40,10 @@ type MiddlewareHandler<
   meta: Readonly<UnknownValues<TMetaIn>>
 ) => Awaitable<MiddlewareReturn<TCtxUpdate>>;
 
-export type RequestHandler<TMeta extends AnyMeta = AnyMeta> = ((
-  request: Request
-) => Promise<Response>) & { meta: TMeta };
+export type RequestHandler<
+  TMeta extends AnyMeta = AnyMeta,
+  TResult extends Response | undefined = Response
+> = ((request: Request) => Promise<TResult>) & { meta: TMeta };
 
 export type Middleware<
   TCtxUpdate extends AnyCtx | void | undefined = AnyCtx,

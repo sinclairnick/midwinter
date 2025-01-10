@@ -137,7 +137,7 @@ describe("Midwinter", () => {
       }>();
     });
 
-    test("Allows merging midwinters", () => {
+    test("Allows merging midwinters", async () => {
       const app1 = new Midwinter().use(() => {
         return { foo: true };
       });
@@ -156,12 +156,26 @@ describe("Midwinter", () => {
         bar: boolean;
       }>();
 
-      expect(
+      await expect(
         handle(new Request("http://test.com")).then((x) => x.json())
       ).resolves.toEqual({
         foo: true,
         bar: true,
       });
+    });
+
+    test("Returns early response", async () => {
+      const app = new Midwinter();
+
+      const handle = app
+        .use(() => Response.json({}))
+        .end(() => {
+          return Response.json({});
+        });
+
+      await expect(
+        handle(new Request("http://test.com"))
+      ).resolves.toBeInstanceOf(Response);
     });
   });
 
@@ -300,6 +314,34 @@ describe("Midwinter", () => {
   });
 
   describe("End", () => {
-    test.todo("");
+    test("Allows empty arg", async () => {
+      const app = new Midwinter();
+
+      const handle = app
+        .use(() => {
+          return Response.json({});
+        })
+        .end();
+
+      expectTypeOf<ReturnType<typeof handle>>().toEqualTypeOf<
+        Promise<Response | undefined>
+      >();
+      await expect(
+        handle(new Request("http://test.com"))
+      ).resolves.toBeInstanceOf(Response);
+    });
+
+    test("Allows handler", async () => {
+      const app = new Midwinter();
+
+      const handle = app.end(() => Response.json({}));
+
+      expectTypeOf<ReturnType<typeof handle>>().toEqualTypeOf<
+        Promise<Response>
+      >();
+      await expect(
+        handle(new Request("http://test.com"))
+      ).resolves.toBeInstanceOf(Response);
+    });
   });
 });
