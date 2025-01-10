@@ -29,10 +29,8 @@ export type RouterOpts = {
 export const init = (opts: RoutingInitOpts = {}) => {
   const { createRouter = createRadixRouter } = opts;
 
-  const mid = new Midwinter();
-
   const routing = <const T extends RoutingOpts>(config: T) => {
-    return mid.define(() => {}, config);
+    return new Midwinter({ config });
   };
 
   const router = (

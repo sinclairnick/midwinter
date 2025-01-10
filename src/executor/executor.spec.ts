@@ -112,6 +112,7 @@ describe("Executor", () => {
     ]);
 
     let hasRes = false;
+    let updateCount = 0;
 
     const req = new Request("https://test.com");
 
@@ -119,8 +120,12 @@ describe("Executor", () => {
       if (result.type === "response") {
         hasRes = true;
       }
+      if (result.type === "update") {
+        updateCount++;
+      }
     }
 
     expect(hasRes).toBeTruthy();
+    expect(updateCount).toBe(0);
   });
 });

@@ -9,6 +9,8 @@ type MethodMap<T> = {
   [key: string]: { pattern: URLPattern; payload: T }[];
 };
 
+// TODO: Test properly - has bugs
+
 /**
  * Creates a linear web router.
  *

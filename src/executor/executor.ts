@@ -1,6 +1,6 @@
 import { Middleware, ResponseHandler } from "../middleware/types";
 import { AnyCtx, AnyMeta } from "../types/util";
-import { fixResponseClone } from "../util/request";
+import { isResponse } from "../util/request";
 
 export type MiddlewareAction =
   | { type: "response"; response: Response }
@@ -55,7 +55,7 @@ export class MiddlewareExecutor<
       const result = await middleware(request, ctx, meta);
 
       // If early exit, return response
-      if (result instanceof Response) {
+      if (result instanceof Response || isResponse(result)) {
         // Don't run remaining request middleware.
         // WARN: This also prevents the subsequent response middleware from
         // being registered.
@@ -63,12 +63,13 @@ export class MiddlewareExecutor<
       }
 
       // If result is a function, it is a response handler
-      if (typeof result === "function") {
+      else if (typeof result === "function") {
         this.responseHandlers.push(result as ResponseHandler);
         continue;
       }
 
-      if (typeof result === "object") {
+      // If update
+      else if (typeof result === "object") {
         yield { type: "update", update: result as AnyCtx } as const;
       }
     }
@@ -98,7 +99,7 @@ export class MiddlewareExecutor<
 
       // Set response if one was returned
       if (result) {
-        _response = fixResponseClone(result);
+        _response = result;
       }
     }
 

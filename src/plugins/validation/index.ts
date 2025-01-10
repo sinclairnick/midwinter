@@ -4,26 +4,24 @@ import { Midwinter } from "../../midwinter/midwinter";
 import { parse } from "schema-shift";
 import { AnyCtx, AnyMeta, EndMiddlewareHandler } from "@/index";
 
-const mid = new Midwinter();
-
 export const init = () => {
   /**
    * Add synchronous parsing and validation, resulting in the
    * query, params, body and headers being added to the ctx.
    */
   const valid = <T extends ValidOpts>(opts: T) => {
-    return mid.define(async (req) => {
+    return new Midwinter(opts).use(async (req) => {
       const parse = makeParseFn(req, opts);
 
       return { ...(await parse()) };
-    }, opts);
+    });
   };
 
   /** Add lazy validation that can be triggered via the `ctx.parse()` function */
   const validLazy = <T extends ValidOpts>(opts: T) => {
-    return mid.define((req) => {
+    return new Midwinter(opts).use((req) => {
       return { parse: makeParseFn(req, opts) };
-    }, opts);
+    });
   };
 
   const output =

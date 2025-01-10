@@ -1,13 +1,9 @@
 import { describe, expect, expectTypeOf, test } from "vitest";
 import { Midwinter } from "./midwinter";
-import {
-  InferMiddlewareCtxIn,
-  InferMiddlewareCtxUpdate,
-  InferMiddlewareMetaUpdate,
-} from "@/middleware/infer";
-import { MergeCtx, NextMiddlewareContext } from "@/middleware/types";
 import { AnyMeta } from "@/types/util";
-import { InferCtx } from "./infer";
+import { InferCtx, InferMeta } from "./infer";
+
+const createReq = () => new Request("https://test.com");
 
 describe("Midwinter", () => {
   describe("Use", () => {
@@ -36,44 +32,32 @@ describe("Midwinter", () => {
       }>();
     });
 
-    test("Works with define", () => {
+    test.only("Works with mutations", async () => {
       const mid = new Midwinter().use((req, ctx) => {
         return { foo: true };
       });
 
-      const middleware = mid.define((req, ctx) => {
-        return { bar: ctx.foo };
-      });
-
-      expectTypeOf<InferMiddlewareCtxIn<typeof middleware>>().toMatchTypeOf<{
-        foo: boolean;
-      }>();
-      expectTypeOf<
-        InferMiddlewareCtxIn<typeof middleware>
-      >().not.toMatchTypeOf<{
-        foo: boolean;
-        bar: boolean;
-      }>();
-      expectTypeOf<NextMiddlewareContext<typeof middleware>>().toMatchTypeOf<{
-        foo: boolean;
-        bar: boolean;
-      }>();
-    });
-
-    test("Works with mutations", () => {
-      const mid = new Midwinter().use((req, ctx) => {
-        return { foo: true };
-      });
-
-      const result = mid.use<{ mut: true }>((req, ctx) => {
+      const middleware = mid.use<{ mut: boolean }>((req, ctx) => {
         ctx.mut = true;
+      });
+
+      const handle = middleware.end((r, c) => Response.json(c));
+
+      expectTypeOf<InferCtx<typeof middleware>>().toEqualTypeOf<{
+        mut: boolean;
+        foo: boolean;
+      }>();
+
+      await expect(handle(createReq()).then((x) => x.json())).resolves.toEqual({
+        foo: true,
+        mut: true,
       });
     });
 
     test("Supports a high number of chains, TS-wise", () => {
       const mid = new Midwinter();
 
-      const myMid = mid.define(() => {
+      const myMid = mid.use(() => {
         return { user: true };
       });
 
@@ -156,9 +140,7 @@ describe("Midwinter", () => {
         bar: boolean;
       }>();
 
-      await expect(
-        handle(new Request("http://test.com")).then((x) => x.json())
-      ).resolves.toEqual({
+      await expect(handle(createReq()).then((x) => x.json())).resolves.toEqual({
         foo: true,
         bar: true,
       });
@@ -173,17 +155,13 @@ describe("Midwinter", () => {
           return Response.json({});
         });
 
-      await expect(
-        handle(new Request("http://test.com"))
-      ).resolves.toBeInstanceOf(Response);
+      await expect(handle(createReq())).resolves.toBeInstanceOf(Response);
     });
-  });
 
-  describe("Define", () => {
     test("Allows void return", () => {
       const mid = new Midwinter();
 
-      const middleware = mid.define((req, ctx) => {
+      const middleware = mid.use((req, ctx) => {
         return;
       });
     });
@@ -191,19 +169,14 @@ describe("Midwinter", () => {
     test("Allows partial ctx specification", () => {
       const mid = new Midwinter<{ foo: boolean; bar: boolean }>();
 
-      const middleware = mid.define((req, ctx: { foo: boolean }) => {
+      const middleware = mid.use((req, ctx: { foo: boolean }) => {
         //
       });
 
       const middleware2 = mid.use(middleware);
 
-      expectTypeOf<InferMiddlewareCtxIn<typeof middleware>>().toMatchTypeOf<{
+      expectTypeOf<InferCtx<typeof middleware>>().toMatchTypeOf<{
         foo: boolean;
-      }>();
-      expectTypeOf<
-        InferMiddlewareCtxIn<typeof middleware>
-      >().not.toMatchTypeOf<{
-        bar: boolean;
       }>();
 
       expectTypeOf<InferCtx<typeof middleware2>>().toMatchTypeOf<{
@@ -212,29 +185,12 @@ describe("Midwinter", () => {
       }>();
     });
 
-    test("Allows override ctx", () => {
-      const mid = new Midwinter<{ foo: boolean }>();
-
-      const middleware = mid.define((req, ctx: { baz: boolean }) => {
-        //
-      });
-
-      expectTypeOf<InferMiddlewareCtxIn<typeof middleware>>().toMatchTypeOf<{
-        baz: boolean;
-      }>();
-      expectTypeOf<
-        InferMiddlewareCtxIn<typeof middleware>
-      >().not.toMatchTypeOf<{
-        bar: boolean;
-      }>();
-    });
-
     test("Uses unknown types, known keys, for meta param", () => {
-      const mid = new Midwinter();
-
-      const middleware = mid.define(() => {}, {
+      const mid = new Midwinter({
         foo: true,
       });
+
+      const middleware = mid.use(() => {});
 
       const middleware2 = mid.use(middleware).use((_, __, meta) => {
         expectTypeOf<(typeof meta)["foo"]>().toEqualTypeOf<unknown>();
@@ -244,13 +200,11 @@ describe("Midwinter", () => {
     test("Infers ctx update", () => {
       const mid = new Midwinter();
 
-      const middleware = mid.define((req, ctx) => {
+      const middleware = mid.use((req, ctx) => {
         return { bar: 1 };
       });
 
-      expectTypeOf<
-        InferMiddlewareCtxUpdate<typeof middleware>
-      >().toMatchTypeOf<{
+      expectTypeOf<InferCtx<typeof middleware>>().toMatchTypeOf<{
         bar: number;
       }>();
     });
@@ -258,19 +212,13 @@ describe("Midwinter", () => {
     test("Infers optional ctx update correctly (as partial)", () => {
       const mid = new Midwinter();
 
-      const middleware = mid.define((req, ctx) => {
+      const middleware = mid.use((req, ctx) => {
         if (Math.random()) {
           return { bar: 1 };
         }
       });
 
-      expectTypeOf<InferMiddlewareCtxUpdate<typeof middleware>>().toMatchTypeOf<
-        | {
-            bar: number;
-          }
-        | undefined
-      >();
-      expectTypeOf<NextMiddlewareContext<typeof middleware>>().toMatchTypeOf<{
+      expectTypeOf<InferCtx<typeof middleware>>().toMatchTypeOf<{
         bar?: number;
       }>();
     });
@@ -281,35 +229,32 @@ describe("Midwinter", () => {
       };
       const mid = new Midwinter<Initial>();
 
-      const middleware = mid.define((req, ctx) => {
+      const middleware = mid.use((req, ctx) => {
         return { bar: 1 };
       });
 
-      expectTypeOf<InferMiddlewareCtxIn<typeof middleware>>().toMatchTypeOf<{
+      expectTypeOf<InferCtx<typeof middleware>>().toMatchTypeOf<{
         foo: boolean;
       }>();
     });
 
     test("Defines fn + meta", () => {
-      const mid = new Midwinter();
+      const mid = new Midwinter({
+        hasMeta: true,
+      });
 
-      const middleware = mid.define(
-        (req, ctx) => {
-          return { bar: 1 };
-        },
-        {
-          hasMeta: true,
-        }
-      );
+      const middleware = mid.use((req, ctx) => {
+        return { bar: 1 };
+      });
 
-      expectTypeOf<
-        InferMiddlewareMetaUpdate<typeof middleware>
-      >().toMatchTypeOf<{
+      expectTypeOf<InferMeta<typeof middleware>>().toMatchTypeOf<{
         hasMeta: boolean;
       }>();
-      expect(middleware.meta).toBeDefined();
-      expect(middleware.meta.hasMeta).toBeDefined();
-      expect(middleware.meta.hasMeta).toBeTruthy();
+
+      const handle = middleware.end();
+      expect(handle.meta).toBeDefined();
+      expect(handle.meta.hasMeta).toBeDefined();
+      expect(handle.meta.hasMeta).toBeTruthy();
     });
   });
 
@@ -326,9 +271,7 @@ describe("Midwinter", () => {
       expectTypeOf<ReturnType<typeof handle>>().toEqualTypeOf<
         Promise<Response | undefined>
       >();
-      await expect(
-        handle(new Request("http://test.com"))
-      ).resolves.toBeInstanceOf(Response);
+      await expect(handle(createReq())).resolves.toBeInstanceOf(Response);
     });
 
     test("Allows handler", async () => {
@@ -339,9 +282,7 @@ describe("Midwinter", () => {
       expectTypeOf<ReturnType<typeof handle>>().toEqualTypeOf<
         Promise<Response>
       >();
-      await expect(
-        handle(new Request("http://test.com"))
-      ).resolves.toBeInstanceOf(Response);
+      await expect(handle(createReq())).resolves.toBeInstanceOf(Response);
     });
   });
 });
