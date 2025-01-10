@@ -3,21 +3,23 @@ import {
   RequestHandler,
   EndMiddlewareHandler,
   Middleware,
-  NextMiddlewareContext,
+  MergeCtx,
+  MergeMeta,
 } from "../middleware/types";
 import { MiddlewareExecutor } from "../executor/executor";
-import { AnyCtx, AnyMeta, MergeObjectsShallow } from "../types/util";
+import { AnyCtx, AnyMeta } from "../types/util";
 import { fixRequestClone } from "../util/request";
 
-export type AnyMidwinter = Midwinter<any, any>;
+export type AnyMidwinter = Midwinter<any, any, any>;
 
 /**
  * A simple way to construct complex middleware pipelines with type-safety
  * and introspectability.
  */
 export class Midwinter<
-  TCtx extends AnyCtx = AnyCtx,
-  TMeta extends AnyMeta = AnyMeta
+  TCtx extends AnyCtx = {},
+  TMeta extends AnyMeta = {},
+  TCtxInitial extends AnyCtx = TCtx
 > {
   constructor(
     private meta: TMeta = {} as any,
@@ -31,20 +33,45 @@ export class Midwinter<
    * @returns A new midwinter instance with any context or meta changes applied, and the new
    * middleware registered.
    */
+  // Middleware
   use<
     TCtxUpdate extends AnyCtx | void = void,
     TMetaUpdate extends AnyMeta | void = void
-  >(middleware: Middleware<TCtxUpdate, TCtx, TMetaUpdate, TMeta>) {
+  >(
+    middleware: Middleware<TCtxUpdate, TCtx, TMetaUpdate, TMeta>
+  ): Midwinter<
+    MergeCtx<TCtxUpdate, TCtx>,
+    MergeMeta<TMetaUpdate, TMeta>,
+    TCtxInitial
+  >;
+
+  // Midwinter
+  use<TNewCtx extends AnyCtx = AnyCtx, TNewMeta extends AnyMeta = AnyMeta>(
+    midwinter: Midwinter<TNewCtx, TNewMeta, TCtx>
+  ): Midwinter<
+    MergeCtx<TNewCtx, TCtx>,
+    MergeMeta<TNewMeta, TMeta>,
+    TCtxInitial
+  >;
+
+  use(value: AnyMiddleware | AnyMidwinter) {
     let meta = { ...this.meta };
 
-    if ("meta" in middleware && middleware.meta != null) {
-      meta = { ...meta, ...middleware.meta } as any;
+    if (value instanceof Midwinter) {
+      return new Midwinter(
+        {
+          ...meta,
+          ...value.meta,
+        },
+        [...this.middlewares, ...value.middlewares]
+      );
     }
 
-    return new Midwinter<
-      NextMiddlewareContext<typeof middleware>,
-      void extends TMetaUpdate ? TMeta : MergeObjectsShallow<TMeta, TMetaUpdate>
-    >(meta as any, [...this.middlewares, middleware]);
+    if ("meta" in value && value.meta != null) {
+      meta = { ...meta, ...value.meta } as any;
+    }
+
+    return new Midwinter(meta, [...this.middlewares, value]) as any;
   }
 
   /**

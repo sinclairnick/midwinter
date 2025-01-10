@@ -1,3 +1,4 @@
+import { AnyMidwinter, Midwinter } from "@/midwinter/midwinter";
 import { AnyCtx } from "..";
 import {
   AnyMeta,
@@ -18,6 +19,8 @@ export type MiddlewareReturn<TCtxUpdate extends AnyCtx | void = void> =
 
 export type AnyMiddleware = Middleware<any, any, any, any>;
 
+export type AnyEndMiddlewareHandler = EndMiddlewareHandler<any, any>;
+
 export type EndMiddlewareHandler<
   TCtx extends AnyCtx = AnyCtx,
   TMetaIn extends AnyMeta = AnyMeta
@@ -33,7 +36,7 @@ type MiddlewareHandler<
   TMetaIn extends AnyMeta = AnyMeta
 > = (
   request: Request,
-  ctx: TCtx,
+  ctx: TCtx & AnyCtx,
   meta: Readonly<UnknownValues<TMetaIn>>
 ) => Awaitable<MiddlewareReturn<TCtxUpdate>>;
 
@@ -50,11 +53,33 @@ export type Middleware<
   ? MiddlewareHandler<TCtxUpdate, TCtx, TMetaIn>
   : MiddlewareHandler<TCtxUpdate, TCtx, TMetaIn> & { meta: TMetaUpdate };
 
-export type NextMiddlewareContext<TMiddleware extends AnyMiddleware> =
-  TMiddleware extends Middleware<infer $Updates, infer $Ctx, any, any>
-    ? void extends $Updates
-      ? $Ctx
-      : undefined extends $Updates
-      ? MergeObjectsShallow<$Ctx, Partial<$Updates>>
-      : MergeObjectsShallow<$Ctx, $Updates>
+export type EndMiddleware<
+  TCtx extends AnyCtx = AnyCtx,
+  TMetaUpdate extends AnyMeta | void = void,
+  TMetaIn extends AnyMeta = AnyMeta
+> = void extends TMetaUpdate
+  ? EndMiddlewareHandler<TCtx, TMetaIn>
+  : EndMiddlewareHandler<TCtx, TMetaIn> & { meta: TMetaUpdate };
+
+export type NextMiddlewareContext<TMid extends AnyMiddleware> =
+  TMid extends Middleware<infer $Updates, infer $Ctx, any, any>
+    ? MergeCtx<$Updates, $Ctx>
     : never;
+
+export type MergeCtx<
+  TUpdates extends AnyCtx | void,
+  TCtx extends AnyCtx | void
+> = void extends TUpdates
+  ? TCtx
+  : undefined extends TUpdates
+  ? MergeObjectsShallow<TCtx, Partial<TUpdates>>
+  : MergeObjectsShallow<TCtx, TUpdates>;
+
+export type MergeMeta<
+  TUpdates extends AnyMeta | void,
+  TMeta extends AnyMeta | void
+> = void extends TUpdates
+  ? TMeta
+  : undefined extends TUpdates
+  ? MergeObjectsShallow<TMeta, Partial<TUpdates>>
+  : MergeObjectsShallow<TMeta, TUpdates>;

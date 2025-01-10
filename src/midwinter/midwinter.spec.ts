@@ -5,14 +5,12 @@ import {
   InferMiddlewareCtxUpdate,
   InferMiddlewareMetaUpdate,
 } from "@/middleware/infer";
-import { NextMiddlewareContext } from "@/middleware/types";
+import { MergeCtx, NextMiddlewareContext } from "@/middleware/types";
 import { AnyMeta } from "@/types/util";
 import { InferCtx } from "./infer";
 
 describe("Midwinter", () => {
   describe("Use", () => {
-    type InferCtx<T> = T extends Midwinter<infer C> ? C : never;
-
     test("Produces correct ctx type", () => {
       const mid = new Midwinter().use((req, ctx) => {
         return { foo: true };
@@ -137,6 +135,33 @@ describe("Midwinter", () => {
       expectTypeOf<InferCtx<typeof middleware>>().toMatchTypeOf<{
         foo: boolean;
       }>();
+    });
+
+    test("Allows merging midwinters", () => {
+      const app1 = new Midwinter().use(() => {
+        return { foo: true };
+      });
+      const app2 = new Midwinter().use(() => {
+        return { bar: true };
+      });
+
+      const app3 = new Midwinter().use(app1).use(app2);
+
+      const handle = app3.end((r, c) => {
+        return Response.json(c);
+      });
+
+      expectTypeOf<InferCtx<typeof app3>>().toMatchTypeOf<{
+        foo: boolean;
+        bar: boolean;
+      }>();
+
+      expect(
+        handle(new Request("http://test.com")).then((x) => x.json())
+      ).resolves.toEqual({
+        foo: true,
+        bar: true,
+      });
     });
   });
 

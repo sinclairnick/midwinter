@@ -4,7 +4,7 @@ export type {
   ResponseHandler,
   AnyMiddleware,
   EndMiddlewareHandler,
-  NextMiddlewareContext,
+  MergeCtx,
   RequestHandler,
 } from "./middleware/types";
 export type { InferMiddlewareCtxUpdate } from "./middleware/infer";
