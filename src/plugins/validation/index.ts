@@ -41,7 +41,7 @@ export const init = () => {
 
       const outData = meta.Output ? await parse(meta.Output, data) : data;
 
-      return Response.json(outData, opts);
+      return Response.json(outData ?? null, opts);
     };
 
   return { valid, validLazy, output };
