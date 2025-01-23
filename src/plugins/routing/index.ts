@@ -33,74 +33,83 @@ export type RouterOpts = {
   keepTrailingSlashes?: boolean;
 };
 
-export const init = (opts: RoutingInitOpts = {}) => {
-  const { router = createRadixRouter } = opts;
+interface InitRoutingReturn {
+  createRouter(
+    routes: RouteHandlerList | RouteHandlerMap,
+    opts?: RouterOpts
+  ): (request: Request) => Promise<Response>;
 
-  function route<const T extends RoutingOptsWithPath>(
+  // Route
+  route<const T extends RoutingOptsWithPath>(
     config: T
   ): Midwinter<{}, T & { params: InferPathParams<T["path"]> }>;
-  function route<const T extends RoutingOpts>(config: T): Midwinter<{}, T> {
-    if (config.path == null) {
-      return new Midwinter(config);
-    }
+  route<const T extends RoutingOpts>(config: T): Midwinter<{}, T>;
+}
 
-    return new Midwinter({
-      ...config,
-      params: parsePathParams(config.path),
-    });
-  }
+export const init = (opts: RoutingInitOpts = {}): InitRoutingReturn => {
+  const { router = createRadixRouter } = opts;
 
-  const createRouter = (
-    routes: RouteHandlerList | RouteHandlerMap,
-    opts: RouterOpts = {}
-  ) => {
-    const {
-      onNotFound = () => {
-        return Response.json({ code: "NOT_FOUND" }, { status: 404 });
-      },
-      onError = () => {
-        return Response.json({ code: "SERVER_EXCEPTION" }, { status: 500 });
-      },
-      keepTrailingSlashes = false,
-    } = opts;
-
-    const _routes: RouteInput<RequestHandler>[] = (
-      Array.isArray(routes) ? routes : Object.values(routes)
-    ).map((route) => {
-      const { method, path, prefix } = route.meta ?? {};
-
-      // TODO: Add warnings/validation
-
-      const _path =
-        typeof prefix === "string" && prefix.length > 0
-          ? `${prefix}${path}`
-          : String(path);
-
-      return {
-        methods: Array.isArray(method) ? method : [String(method)],
-        path: keepTrailingSlashes ? _path : _path.replace(/\/$/, ""),
-        payload: route,
-      };
-    });
-
-    const _router = router(_routes);
-
-    return async (request: Request) => {
-      try {
-        const handler = _router.match(request);
-
-        if (handler) {
-          return await handler(request);
-        }
-
-        return onNotFound(request);
-      } catch (e) {
-        return onError(e);
+  return {
+    route<const T extends RoutingOpts>(config: T): Midwinter<{}, T> {
+      if (config.path == null) {
+        return new Midwinter(config);
       }
-    };
-  };
 
-  return { route, createRouter };
+      return new Midwinter({
+        ...config,
+        params: parsePathParams(config.path),
+      });
+    },
+    createRouter(
+      routes: RouteHandlerList | RouteHandlerMap,
+      opts: RouterOpts = {}
+    ) {
+      const {
+        onNotFound = () => {
+          return Response.json({ code: "NOT_FOUND" }, { status: 404 });
+        },
+        onError = () => {
+          return Response.json({ code: "SERVER_EXCEPTION" }, { status: 500 });
+        },
+        keepTrailingSlashes = false,
+      } = opts;
+
+      const _routes: RouteInput<RequestHandler>[] = (
+        Array.isArray(routes) ? routes : Object.values(routes)
+      ).map((route) => {
+        const { method, path, prefix } = route.meta ?? {};
+
+        // TODO: Add warnings/validation
+
+        const _path =
+          typeof prefix === "string" && prefix.length > 0
+            ? `${prefix}${path}`
+            : String(path);
+
+        return {
+          methods: Array.isArray(method) ? method : [String(method)],
+          path: keepTrailingSlashes ? _path : _path.replace(/\/$/, ""),
+          payload: route,
+        };
+      });
+
+      const _router = router(_routes);
+
+      return async (request: Request) => {
+        try {
+          const handler = _router.match(request);
+
+          if (handler) {
+            return await handler(request);
+          }
+
+          return onNotFound(request);
+        } catch (e) {
+          return onError(e);
+        }
+      };
+    },
+  };
 };
 
 export const LinearRouter = createLinearRouter;
