@@ -16,6 +16,8 @@ export type UnknownValues<T> = {
   [Key in keyof T]: unknown;
 };
 
+export type DefaultTo<T, U> = [T] extends [never] ? U : T;
+
 export type AnyCtx =
   // This value param must be unknown otherwise arbitrary functions are accepted
   Record<PropertyKey, unknown>;

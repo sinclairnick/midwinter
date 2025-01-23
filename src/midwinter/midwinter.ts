@@ -70,7 +70,12 @@ export class Midwinter<
       meta = { ...meta, ...value.meta } as any;
     }
 
-    return new Midwinter(meta, [...this.middlewares, value]) as any;
+    // Just to be defensive
+    if (typeof value === "function") {
+      return new Midwinter(meta, [...this.middlewares, value]) as any;
+    }
+
+    return new Midwinter(meta, [...this.middlewares]) as any;
   }
 
   end(): RequestHandler<TMeta, Response | undefined>;

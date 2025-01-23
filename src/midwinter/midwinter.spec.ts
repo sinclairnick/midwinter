@@ -32,7 +32,7 @@ describe("Midwinter", () => {
       }>();
     });
 
-    test.only("Works with mutations", async () => {
+    test("Works with mutations", async () => {
       const mid = new Midwinter().use((req, ctx) => {
         return { foo: true };
       });

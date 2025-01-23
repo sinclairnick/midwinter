@@ -27,7 +27,13 @@
     "validation.js",
     "validation.d.ts",
     "routing.js",
-    "routing.d.ts"
+    "routing.d.ts",
+    "client-types.js",
+    "client-types.d.ts",
+    "cors.js",
+    "cors.d.ts",
+    "otel.js",
+    "otel.d.ts"
   ],
   "license": "MIT",
   "main": "dist/index.js",
@@ -40,14 +46,29 @@
       "import": "./dist/index.mjs"
     },
     "./validation": {
-      "types": "./validation.d.ts",
-      "require": "./validation.js",
+      "types": "./dist/validation.d.ts",
+      "require": "./dist/validation.js",
       "import": "./dist/validation.mjs"
     },
     "./routing": {
-      "types": "./routing.d.ts",
-      "require": "./routing.js",
+      "types": "./dist/routing.d.ts",
+      "require": "./dist/routing.js",
       "import": "./dist/routing.mjs"
+    },
+    "./client-types": {
+      "types": "./dist/client-types.d.ts",
+      "require": "./dist/client-types.js",
+      "import": "./dist/client-types.mjs"
+    },
+    "./cors": {
+      "types": "./dist/cors.d.ts",
+      "require": "./dist/cors.js",
+      "import": "./dist/cors.mjs"
+    },
+    "./otel": {
+      "types": "./dist/otel.d.ts",
+      "require": "./dist/otel.js",
+      "import": "./dist/otel.mjs"
     }
   },
   "private": false,
@@ -60,6 +81,8 @@
   },
   "sideEffects": false,
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/semantic-conventions": "^1.28.0",
     "radix3": "^1.1.2",
     "schema-shift": "^0.4.0",
     "urlpattern-polyfill": "^10.0.0"

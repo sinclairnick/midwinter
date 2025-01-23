@@ -1,81 +1,74 @@
-# Midwinter.js
+<center>
 
-Midwinter.js is a powerful, experimental middleware engine which allows middleware to define imperative code, metadata and type information, enabling a much smarter plugin system.
+# ❄️ Midwinter.js
 
-It is specifically built for WinterCG runtimes, hence the name.
+_Middleware + WinterCG = Midwinter_
+
+</center>
 
 ```sh
 npm i midwinter
 ```
 
+Using Midwinter, we can define and execute middleware which can additionally _provide metadata and type information_. This, in turn, enables a very powerful plugin system prohibited by traditional approaches.
+
+> [!IMPORTANT]  
+> Midwinter is currently in beta status. It won't be fundamentally overhauled but may experience some breaking API changes.
+
 ## Overview
 
-Most middleware is purely _imperative_. To understand what middleware does, we must either manually trace the code, or actually run the code itself.
+Middleware inherently changes how our backend applications behave. However, exactly what is changed – at runtime and at rest – is often unclear. Midwinter enables middleware to declare how it changes our app as a whole and how it might change the context during a request lifecycle.
 
-Midwinter enables middleware to _declare_ it's effects via _metadata_ (for static information) and _types_ (for how the request context changes over time).
+> For example, a given middleware might add a `req.user`, or it might add a new `/route` to our app
 
-This simple – but very powerful – paradigm means plugins (like [routing](#routing), [validation](#validation)) can truly extend upon the simple core of Midwinter, as opposed to merely hacking atop it like traditional middleware.
+Allowing middleware to define metadata that is available to both static and runtime environments means the core of Midwinter is very minimal. This paradigm enables plugins to become deeply integrated, and yet trivially interchangeable and extensible.
 
 ## Basic Usage
 
 ```ts
-const mid = new Midwinter();
+// Define
 
-const handler = mid
-  .use((req, ctx) => {
-    return { userId: "123" }; // Update the request context
-  })
+const withPath = <T>(path: T) => new Midwinter({ path });
 
+const withAuth = new Midwinter().use((req, ctx) => {
+  return { userId: "123" };
+});
+
+const handle = withAuth
+  .use(withPath("/me")) // use middleware
   .end((req, ctx) => {
-    // .end middleware pipeline
-    return Response.json({ userId: ctx.userId });
+    const { userId } = ctx; // inferred types
+
+    return Response.json({ userId });
   });
 
-const response = await handler(new Request(opts));
-//    ^?
-//    (req: Request) => Promise<Response>
+// Invoke
+
+const response = await handle(new Request(/*...*/));
+
+await response.json(); // { userId: "123" }
+
+// Introspect
+
+handle.path === "/me"; // true
+
+typeof handle.path; // /me
 ```
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-  - [How does Midwinter work?](#how-does-midwinter-work-)
-  - [Key Concepts](#key-concepts)
-- [Middleware Guide](#middleware-guide)
+- [Guide](#guide)
+  - [Getting Started](#getting-started)
   - [Return value behaviour](#return-value-behaviour)
   - [Request Context](#request-context)
   - [Listening to responses](#listening-to-responses)
   - [Chaining](#chaining)
-  - [Ending a pipeline: returning a response](#ending-a-pipeline--returning-a-response)
+  - [`.end`ing pipelines](#-end-ing-pipelines)
   - [Metadata](#metadata)
 - [Plugins](#plugins)
   - [Official Plugins](#official-plugins)
   - [Routing](#routing)
   - [Validation](#validation)
-- [API Reference](#api-reference)
-  - [`.define(middleware)`](#-define-middleware--)
-  - [`.use(middleware)`](#-use-middleware--)
-  - [`.end(middleware)`](#-end-middleware--)
-
-## Introduction
-
-### How does Midwinter work?
-
-Midwinter is a middleware engine which creates pipelines of middleware. This enables building fully-fledged backend apps in any modern runtime environment.
-
-With Midwinter, everything is middleware and all middleware can optionally provide clues about how it modifies our application.
-
-For changes that occur during the request lifecycle, middleware can inform us how it might change the **request context**. For changes to the application as a whole, **metadata** can be specified.
-
-Any given middleware can provide any number of:
-
-- Request/response handling
-- Request context updates
-- Metadata updates
-
-Downstream middleware can utilise the updated request context. Plugins can utilise metadata to extend functionality. Both occur with full type-safety, enabling both programmatic and type-level introspection and processing.
-
-In turn, framework-level functionality can be provided as a meagre plugin.
 
 ### Key Concepts
 
@@ -86,7 +79,7 @@ In turn, framework-level functionality can be provided as a meagre plugin.
 
 The request context represents how our app changes over the lifetime of a request. Using Midwinter, the changes to this context are automatically inferred, and can be explicitly defined if necessary.
 
-> _e.g. etermining the current user and adding to the request context_
+> _e.g. determining the current user and adding to the request context_
 
 </details>
 
@@ -101,41 +94,136 @@ Middleware can also register information that doesn't depend on the request life
 
 </details>
 
-## Middleware Guide
+## Guide
 
-Midwinter intentionally aims for a minimal, unopinionated API surface. As such, middleware are regular basic functions built on WinterCG web standards.
+The following is the entire Midwinter API:
 
 ```ts
-const isAuthed = (req: Request) => {
-  if (getUser() == null) {
-    return Response.json({ code: "UNAUTHORISED" }, { status: 401 });
-  }
-}; // optionally: `satisfies Middleware`
+const handle = new Midwinter(meta)
+  //
+  .use(middleware)
+  //
+  .end(endMiddleware);
 ```
 
-This can then be used to create a basic middleware pipeline.
+Midwinter is remarkably simple and deceptively powerful. With only this API, we can create complex middleware pipelines and defer much of what might exist in a framework to plugins instead, without any loss of _functionality_ or _ergonomics_.
+
+### Getting Started
+
+At it's simplest, middleware can be a regular function.
+
+```ts
+const isAuthed = async (req: Request) => {
+  const user = await getUser(req);
+
+  if (user == null) {
+    throw new Error("Unauthorized!");
+  }
+};
+```
+
+This can then be used to create a basic **middleware pipeline**.
 
 ```ts
 const handleRequest = new Midwinter()
-  .use(isAuthed) // Using our simple function
-  .end((req, ctx) => {
-    return Response.json({ ok: true });
-  });
+  .use(isAuthed) // <--
+  .end(() => Response.json({ ok: true }));
 ```
 
-To avoid having to explicitly define the parameter types, we should use the `.use` and `.define` methods instead.
+When we `.use` a middleware, we are registering it to a middleware **pipeline**. To actually invoke this middleware pipeline, we need to `.end` it, returning a **request handler** function.
 
 ```ts
-const mid = new Midwinter();
+// Defining and registering middleware
+const middleware = new Midwinter().use(() => {});
 
-const isAuthed = mid.define((req, ctx, meta) => {
-  if (getUser() == null) {
-    return Response.json({ code: "UNAUTHORISED" }, { status: 401 });
-  }
+// Ending a pipeline
+const handle = middleware.end(() => new Response(/**...*/));
+
+// Executing the request handler
+const response = await handle(new Request(/**... */));
+```
+
+We can chain middleware together into reusable pipelines.
+
+```ts
+const one = new Midwinter().use(() => {
+  console.log(1);
+});
+
+const two = new Midwinter().use(() => {
+  console.log(2);
+});
+
+const three = () => {
+  console.log(3);
+};
+
+const withOneTwoThree = one.use(two).use(three);
+```
+
+The above example demonstrates the three ways middleware can be defined/registered:
+
+1. **Extending** from an existing pipeline
+2. Applying a **pipeline** via `.use`
+3. Applying a **function** via `.use`
+
+In other words, **instances of Midwinter** can also be treated as middleware itself!
+
+When this pipeline is `.use`d or extended, the middleware is run in sequence.
+
+```ts
+const handle = withOneTwoThree.end();
+
+handle(new Request(/**... */));
+// 1
+// 2
+// 3
+```
+
+When our middleware returns an **object**, it gets shallowly merged with the existing **request context**. This context is passed as the second parameter to any middleware functions.
+
+```ts
+const withReqId = new Middleware().use((req) => {
+  return { id: req.headers.get("x-request-id") };
+});
+
+const withLogReqId = withReqId.end((req, ctx) => {
+  console.log(ctx.id);
 });
 ```
 
-From here on we'll use these.
+We can also specify **metadata** to make our app more informative to **both humans and computers**.
+
+```ts
+const withPath = <T extends string>(path: T) => {
+  return new Midwinter({ path });
+};
+
+const middleware = new Midwinter().use(withPath("/users/:id")).end();
+
+middleware.meta.path === "/users/:id";
+// The `meta.path` type is also `/users/:id`
+```
+
+So far, we've only been intercepting the _request_. But we can also intercept and modify the _response_. By returning a function, we can register response middleware.
+
+```ts
+const withTiming = new Midwinter().use(() => {
+  const start = Date.now();
+
+  return (res: Response) => {
+    const headers = new Headers(res.headers);
+
+    headers.set("x-timing", String(Date.now() - start));
+
+    return new Response(res.body, { ...res, headers });
+  };
+});
+```
+
+---
+
+We have seen how Midwinter is fairly simple, but these trivial examples hardly show how it is _powerful_. To dive deeper into how Midwinter works, continue on below. To get a better sense of how this paradigm can enable interesting plugins, continue to the [Plugins](#plugins) section.
 
 ### Return value behaviour
 
@@ -157,7 +245,7 @@ On top of being convenient and simple, relying on return type maintains type-saf
 These three options look something like:
 
 ```ts
-mid.define(() => {
+new Midwinter().use(() => {
   if (withUpdate) {
     return { foo: "bar" };
   }
@@ -168,7 +256,7 @@ mid.define(() => {
 
   return (res: Response) => {
     // Optionally return a modified response
-    return new Response(res.body, { status: 301 });
+    return new Response(res.body, { ...res, status: 301 });
   };
 });
 ```
@@ -180,18 +268,15 @@ mid.define(() => {
 <details>
 <summary>Expand</summary>
 
-The second argument Midwinter passes to any middleware is the request context. By default, the middleware instance we're extending from will populate the `ctx` type, but we can also override this.
+The second argument Midwinter passes to any middleware is the request context.
 
 ```ts
-const ipLogger = mid.define((req, ctx: { ip: boolean }) => {
-  // Ctx type has been override here
+const withIp = new Midwinter().use(() => ({ ip: "123" }));
+
+const ipLogger = withIp.use((req, ctx) => {
   console.log(ctx.ip);
 });
 ```
-
-If we try to `.use` this middleware somewhere `ip` is _not_ yet part of the context, we will get a typescript error.
-
-> The third parameter is the middleware meta, which cannot be mutated.
 
 #### Updating the request context
 
@@ -207,8 +292,7 @@ const withReqTime = mid.define((req, ctx) => {
 new Midwinter()
   .use(withReqTime) //
   .use((req, ctx) => {
-    // Access updated context
-    ctx.start instanceof Date; // true
+    ctx.start != null; // true
   });
 ```
 
@@ -219,7 +303,7 @@ Much of the time, we only need to return one of the above three return value pos
 While returning both a response and response listener is redundant, we may still want to _update the request_ context during these two cases. To do so, we can mutate the request context directly.
 
 ```ts
-const withReqTime = mid.define<{ start: number }>((req, ctx) => {
+const withReqTime = new Midwinter().use<{ start: number }>((req, ctx) => {
   const start = Date.now()
 
   // Update context
@@ -247,7 +331,7 @@ In this example, the type has been explicitly provided, which maintains type-saf
 Returning a function enables listening to and modifying the outbound response. The function takes a single argument: the response object.
 
 ```ts
-mid.define(() => {
+new Midwinter().use(() => {
   return (res: Response) => {
     // TODO: Return a new response... or not
   };
@@ -266,12 +350,11 @@ We can modify the response object by returning a new one. Bear in mind both `Req
 Midwinter makes heavy use of chaining and TypeScript inference which helps to compose complex middleware pipelines using simple code, and to string our applications together at the type-level to surface issues before running anything, like trying to access missing data from the request context.
 
 ```ts
-const adminRoute = mid
-  .use(withAuth) // 1
-  .use(isAdmin); // 2
+const withAuth = new Midwinter().use(/**... */);
+const isAdmin = withAuth.use(/**... */);
+const isSuperAdmin = isAdmin.use(/**... */);
 
-const superAdminRoute = isAdminMid // Reuse this pipeline
-  .use(hasEmailDomain("@test.com")); // 3
+new Midwinter().use(isSuperAdmin);
 ```
 
 By chaining we can extend middleware pipelines easily and create complex pathways for a request to travel through.
@@ -280,7 +363,7 @@ By chaining we can extend middleware pipelines easily and create complex pathway
 
 </details>
 
-### Ending a pipeline: returning a response
+### `.end`ing pipelines
 
 <details>
 <summary>Expand</summary>
@@ -290,7 +373,7 @@ To officially _end_ a middleware pipeline, and thus return a request handler we 
 Instead of a new `Midwinter` instance being returned, `.end` results in a request handler function that accepts a `Request` and returns a `Response` promise.
 
 ```ts
-const handle = mid
+const handle = new Midwinter()
   .use(withA)
   .use(withB)
   .use(withC)
@@ -308,51 +391,56 @@ const response = await handle(request);
 
 Metadata enables middleware to "decorate" our backend apps in powerful ways that traditional middleware can't.
 
-To define middleware metadata, we can use the `.define` method, passing a second argument.
-
 ```ts
 const withName = (name: string) => {
   const meta = { name };
 
-  return mid.define(
-    () => {},
-    // Pass any meta here
+  return new Midwinter(
     meta // <--
   );
 };
 ```
 
-If we use this middeware, our resulting request handler will possess this metadata.
+In this case, our "middleware" actually runs nothing at all - it is _only_ metadata. If we `.use` this middeware, our resulting request handler will possess this metadata, which can then be utilised by other tooling to great effect.
 
 ```ts
-const handle = mid
+const handle = new Midwinter()
   .use(withName("getUser")) // <--
   .end(() => {
     // ...
   });
 
-handle.meta.name === "getUser
+handle.meta.name === "getUser";
 ```
 
 This approach to metadata enables plugins, or own code, to fully "see" our app, both programmatically and type-wise. This feature enables a very simple and powerful paradigm for plugins.
 
 #### Metadata merging
 
-Like request context, metadata is shallowly merged,
+Like request context updates, metadata is shallowly merged.
+
+```ts
+const handle = new Midwinter()
+  .use(withName("getUser")) // <--
+  .use(withName("getPost")) // <--
+  .end(() => {
+    // ...
+  });
+
+handle.meta.name === "getPost";
+```
 
 ## Plugins
 
-In Midwinter, "plugins" (as opposed to regular middleware), broadly refers to a set of interacting middleware or functionality that operates on request handlers.
+In Midwinter, "plugins" (as opposed to regular middleware), broadly refers to a set of interacting middleware, or functionality that operates on request handlers.
 
 For example, a plugin might add some metadata to a middleware pipeline and then access that metadata elsewhere, down the line.
 
-Below are some examples.
-
 ### Official Plugins
 
-Midwinter is both simple and powerful. Therefore, core backend functionality (like routing) is able to be provided as a plugin, without any concessions.
+Midwinter itself is a very slim middleware pipeline, and so most "app stuff" is provided by plugins.
 
-Midwinter provides several official plugins, but even these core parts can be swapped for any third-party or custom approaches one might prefer more.
+Core app functionality like routing and validation (among others) are provided. However, even these can be replaced by third party alternatives, without much downside.
 
 > More official plugins will be added in coming months. Feel free to open a PR for any requests.
 
@@ -372,7 +460,7 @@ In short, the routing plugin turns a list of request handlers into an actual "ap
 ```ts
 import * as Routing from "midwinter/routing";
 
-export const { router, routing } = Routing.init(opts);
+export const { router, route } = Routing.init(opts);
 ```
 
 #### `routing`
@@ -380,27 +468,29 @@ export const { router, routing } = Routing.init(opts);
 The `routing` function is a middleware that adds routing-related metadata to a route.
 
 ```ts
-const handle = mid
+const handle = new Midwinter()
   .use(
-    routing({
+    route({
       path: "/user",
       method: "/get",
     })
   )
-  .end(() => {});
+  .end(() => {
+    // ...
+  });
 ```
 
 We can optionally specify a prefix which will continue along any subsequent middleware pipelines.
 
 ```ts
-const apiRoute = mid.use(
-  routing({
+const apiRoute = new Midwinter().use(
+  route({
     prefix: "/api/v1",
   })
 );
 
 const getPost = apiRoute
-	.use(routing({
+	.use(route({
 		path: "/post/:id",
 		method: "get
 	}))
@@ -450,7 +540,7 @@ const Schema = z.object({
   // ...
 });
 
-mid
+new Midwinter()
   .use(
     valid({
       // All possible fields:
@@ -475,7 +565,7 @@ With `valid`, all components are pre-parsed and added to the context.
 In contrast to `valid`, `validLazy` does not pre-parse anything. Instead a parsing function is added to the context, offering greater flexibility over how parsing is handled and what to parse.
 
 ```ts
-mid
+new Midwinter()
   .use(
     validLazy({
       // ...same options
@@ -513,88 +603,3 @@ mid
 ```
 
 </details>
-
-## API Reference
-
-The API surface is intentionally very concise, comprised of only _three_ methods.
-
-### `.define(middleware)`
-
-> Define a reusable middleware
-
-**Define a simple auth middleware**
-
-```ts
-const mid = new Midwinter();
-
-const withAuth = mid.define((req, ctx) => {
-  if (isAuthed) {
-    return { user: { id: "123" } }; // Return ctx updates
-  }
-
-  // Early return with a response
-  return Response.json({ error: true });
-});
-```
-
-**Manually specify the context updates type**
-
-```ts
-const withMutation = mid.define<{ wasMutated: boolean }>((req, ctx) => {
-  ctx.wasMutated = true;
-});
-```
-
-**Chaining middleware**
-
-```ts
-const withAuthAndMutation = withAuth.use(withMutation);
-```
-
-### `.use(middleware)`
-
-> Register a middleware to a middleware pipeline
-
-**Use predefined middleware**
-
-```ts
-const getPostMid = mid.use(withAuth).end((req, ctx) => {
-  ctx.user; // defined
-});
-```
-
-**Use inline middleware**
-
-```ts
-const getPost = mid
-  .use((req, ctx) => {
-    return { user };
-  })
-  .end((req, ctx) => {
-    ctx.user; // defined
-  });
-```
-
-**Inline middleware with mutations**
-
-```ts
-  .use<{ wasMutated: boolean }>((req, ctx) => {
-    ctx.wasMutated = true;
-  });
-```
-
-### `.end(middleware)`
-
-> Use a middleware that must return a response
-
-```ts
-// Respond to the request and terminate the `.use` chain
-const getPost = mid
-  // ...snip
-  .end((req, ctx) => {
-    return new Response();
-  });
-
-// Use the request handler however you want
-const response = await getPost(new Request(url));
-```

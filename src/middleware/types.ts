@@ -37,7 +37,7 @@ type MiddlewareHandler<
 > = (
   request: Request,
   ctx: TCtx & AnyCtx,
-  meta: Readonly<UnknownValues<TMetaIn>>
+  meta: Readonly<UnknownValues<TMetaIn & AnyMeta>>
 ) => Awaitable<MiddlewareReturn<TCtxUpdate>>;
 
 export type RequestHandler<

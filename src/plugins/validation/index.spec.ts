@@ -1,9 +1,9 @@
 import { describe, expect, expectTypeOf, test } from "vitest";
 import { z, ZodError } from "zod";
 import { init } from ".";
-import { InferCtx, InferMeta } from "@/midwinter/infer";
+import { InferCtx, InferMeta } from "../../midwinter/infer";
 import { ParseInputsFn } from "./types";
-import { Midwinter } from "../../midwinter/midwinter";
+import { Midwinter } from "midwinter";
 
 describe("valid", () => {
   const mid = new Midwinter();

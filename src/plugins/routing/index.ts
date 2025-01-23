@@ -3,24 +3,20 @@ import { createRouter as createRadixRouter } from "./routers/radix";
 import { createRouter as createLinearRouter } from "./routers/linear";
 import { RequestHandler } from "@/middleware/types";
 import { RouteInput } from "./routers/types";
+import { HttpMethodInput } from "../common";
+import { InferPathParams, parsePathParams } from "./util";
 
 export type RoutingInitOpts = {
-  createRouter?: typeof createLinearRouter;
+  router?: typeof createLinearRouter;
 };
-
-export type HttpVerb =
-  | "get"
-  | "post"
-  | "put"
-  | "patch"
-  | "delete"
-  | "options"
-  | "head";
-
-export type HttpMethodInput = HttpVerb | Uppercase<HttpVerb> | (string & {});
 
 export type RoutingOpts = {
   path?: string;
+  method?: HttpMethodInput[] | HttpMethodInput;
+  prefix?: string;
+};
+export type RoutingOptsWithPath = {
+  path: string;
   method?: HttpMethodInput[] | HttpMethodInput;
   prefix?: string;
 };
@@ -38,13 +34,23 @@ export type RouterOpts = {
 };
 
 export const init = (opts: RoutingInitOpts = {}) => {
-  const { createRouter = createRadixRouter } = opts;
+  const { router = createRadixRouter } = opts;
 
-  const routing = <const T extends RoutingOpts>(config: T) => {
-    return new Midwinter(config);
-  };
+  function route<const T extends RoutingOptsWithPath>(
+    config: T
+  ): Midwinter<{}, T & { params: InferPathParams<T["path"]> }>;
+  function route<const T extends RoutingOpts>(config: T): Midwinter<{}, T> {
+    if (config.path == null) {
+      return new Midwinter(config);
+    }
 
-  const router = (
+    return new Midwinter({
+      ...config,
+      params: parsePathParams(config.path),
+    });
+  }
+
+  const createRouter = (
     routes: RouteHandlerList | RouteHandlerMap,
     opts: RouterOpts = {}
   ) => {
@@ -77,11 +83,11 @@ export const init = (opts: RoutingInitOpts = {}) => {
       };
     });
 
-    const router = createRouter(_routes);
+    const _router = router(_routes);
 
     return async (request: Request) => {
       try {
-        const handler = router.match(request);
+        const handler = _router.match(request);
 
         if (handler) {
           return await handler(request);
@@ -94,7 +100,7 @@ export const init = (opts: RoutingInitOpts = {}) => {
     };
   };
 
-  return { routing, router };
+  return { route, createRouter };
 };
 
 export const LinearRouter = createLinearRouter;

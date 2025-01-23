@@ -2,7 +2,7 @@ import { defineConfig } from "tsup";
 import pkg from "./package.json";
 import { writeFile } from "fs/promises";
 
-const Exports = ["validation", "routing"];
+const Exports = ["validation", "routing", "client-types", "cors", "otel"];
 
 export default defineConfig({
   entry: {
@@ -23,8 +23,8 @@ export default defineConfig({
 
     for (const name of Exports) {
       _pkg.exports[`./${name}`] = {
-        types: `./${name}.d.ts`,
-        require: `./${name}.js`,
+        types: `./dist/${name}.d.ts`,
+        require: `./dist/${name}.js`,
         import: `./dist/${name}.mjs`,
       };
 
