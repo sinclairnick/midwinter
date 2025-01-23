@@ -603,3 +603,36 @@ mid
 ```
 
 </details>
+
+### Cors
+
+<details>
+<summary>Expand</summary>
+
+TODO: Add docs
+
+```ts
+import * as Cors from "midwinter/cors";
+
+export const { cors } = Cors.init();
+
+new Midwinter().use(cors(opts));
+```
+
+</details>
+
+### Client Types
+
+<details>
+<summary>Expand</summary>
+
+TODO: Add docs
+
+```ts
+import * as ClientTypes from "midwinter/client-types";
+import type { AppRoutes } from "./app";
+
+export type AppDef = ClientTypes.InferApp<typeof AppRoutes>;
+```
+
+</details>
