@@ -7,7 +7,7 @@ import { AnyCtx, AnyMeta } from "@/types/util";
 
 export const init = () => {
   const cors = <TCtx extends AnyCtx = AnyCtx, TMeta extends AnyMeta = AnyMeta>(
-    options: CorsOptions<TCtx, TMeta>
+    options?: CorsOptions<TCtx, TMeta>
   ): Middleware<void, TCtx, void, TMeta> => {
     return async (req, ctx, meta) => {
       const {
