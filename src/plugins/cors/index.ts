@@ -15,7 +15,7 @@ export const init = () => {
         allowMethods = ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH"],
         allowHeaders = [],
         exposeHeaders = [],
-        allowCredentials,
+        allowCredentials = false,
         maxAge,
       } = (typeof options === "function"
         ? await options(req, ctx, meta)
@@ -45,7 +45,11 @@ export const init = () => {
           );
         }
 
-        return new Response(res.body, { ...res, headers: headers });
+        return new Response(res.body, {
+          status: res.status,
+          statusText: res.statusText,
+          headers: headers,
+        });
       };
     };
   };

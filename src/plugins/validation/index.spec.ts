@@ -95,9 +95,26 @@ describe("valid", () => {
         headers: { foo: boolean };
       }>();
     });
-  });
 
-  // TODO: Runtime parsing
+    test("Retains existing ctx", () => {
+      const Headers = z.object({ foo: z.boolean() });
+      const middleware = mid
+        .use(() => ({ foo: "bar" }))
+        .use(valid({ Headers }));
+
+      type Ctx = InferCtx<typeof middleware>;
+      type Meta = InferMeta<typeof middleware>;
+
+      expectTypeOf<Meta>().toMatchTypeOf<{
+        Headers: typeof Headers;
+      }>();
+
+      expectTypeOf<Ctx>().toMatchTypeOf<{
+        headers: { foo: boolean };
+        foo: string;
+      }>();
+    });
+  });
 
   describe("Runtime", () => {
     const WithId = z.object({ id: z.string() });

@@ -7,11 +7,52 @@ import { HttpMethodInput } from "../common";
  * Each option corresponds to it's own `Access-Control-X` header.
  */
 export type CorsHeaderOptions = {
+  /**
+   * An origin or list of origins to allow
+   *
+   * @default
+   * "*"
+   */
   allowOrigin?: string | string[];
+
+  /**
+   * A list of allowed methods.
+   *
+   * @default
+   * ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH"]
+   */
   allowMethods?: HttpMethodInput[];
+
+  /**
+   * A list of allowed header keys.
+   *
+   * @default
+   * []
+   */
   allowHeaders?: string[];
+
+  /**
+   * Whether to allow credentials.
+   *
+   * @default
+   * false
+   */
   allowCredentials?: boolean;
+
+  /**
+   * Max age.
+   *
+   * @default
+   * undefined
+   */
   maxAge?: number;
+
+  /**
+   * Expose headers.
+   *
+   * @default
+   * []
+   */
   exposeHeaders?: string[];
 };
 

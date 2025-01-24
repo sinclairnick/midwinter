@@ -43,4 +43,15 @@ describe("Cors", () => {
         })
       );
   });
+
+  test("Works with redirects", async () => {
+    const handler = new Midwinter().use(cors()).end(() => {
+      return Response.redirect("https://test.com", 302);
+    });
+
+    const res = await handler(new Request("https://test-100.com"));
+
+    expect(res.headers.get("location")).toBe("https://test.com/");
+    expect(res.status).toBe(302);
+  });
 });

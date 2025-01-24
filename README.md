@@ -216,7 +216,11 @@ const withTiming = new Midwinter().use(() => {
 
     headers.set("x-timing", String(Date.now() - start));
 
-    return new Response(res.body, { ...res, headers });
+    return new Response(res.body, {
+      status: res.status,
+      statusText: res.statusText,
+      headers,
+    });
   };
 });
 ```
@@ -256,7 +260,9 @@ new Midwinter().use(() => {
 
   return (res: Response) => {
     // Optionally return a modified response
-    return new Response(res.body, { ...res, status: 301 });
+    return new Response(res.body, {
+      status: 301,
+    });
   };
 });
 ```
