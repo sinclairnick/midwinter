@@ -1,4 +1,4 @@
-import { MergeObjectsShallow, NonReadonly, Strip } from "@/types/util";
+import { MergeObjectsShallow, Strip } from "@/types/util";
 import { InferPathParams } from "./util";
 import { Midwinter, RequestHandler } from "midwinter";
 import { HttpMethodInput } from "../common";

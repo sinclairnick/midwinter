@@ -17,7 +17,7 @@ export type InferConfig<THandler extends RequestHandler> =
       }
     : never;
 
-type FormatMethod<T extends string> = T extends "*" ? string : T;
+export type FormatMethod<T extends string> = T extends "*" ? string : T;
 
 export type InferMethod<THandler extends RequestHandler> =
   THandler extends RequestHandler<infer $Meta, any>

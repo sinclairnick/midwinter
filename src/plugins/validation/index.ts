@@ -3,6 +3,9 @@ import { makeParseFn } from "./parsing";
 import { parse } from "schema-shift";
 import { Midwinter, AnyCtx, AnyMeta, EndMiddlewareHandler } from "midwinter";
 
+export type * from "./types";
+export type * from "./parsing";
+
 export const init = () => {
   /**
    * Add synchronous parsing and validation, resulting in the

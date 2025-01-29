@@ -10,7 +10,10 @@ import {
   RouteHandlerMap,
   RouterOpts,
   RoutingOpts,
-} from "./type";
+} from "./types";
+
+export type * from "./types";
+export type * from "./util";
 
 export type RoutingInitOpts = {
   router?: typeof createLinearRouter;
@@ -36,7 +39,7 @@ export const init = (opts: RoutingInitOpts = {}): InitRoutingReturn => {
     route,
     prefixed(prefix) {
       return (config) =>
-        route({ ...config, path: `${prefix}${config.path ?? ""}` }) as any
+        route({ ...config, path: `${prefix}${config.path ?? ""}` }) as any;
     },
     createRouter(
       routes: RouteHandlerList | RouteHandlerMap,
