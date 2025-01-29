@@ -1,7 +1,6 @@
 import { Midwinter } from "../../";
-import { describe, expect, expectTypeOf, test } from "vitest";
+import { describe, expectTypeOf, test } from "vitest";
 import * as Routing from "./index";
-import { ParsedConfig } from "./type";
 import { InferMeta } from "@/midwinter/infer";
 
 describe("router", () => {
@@ -45,43 +44,19 @@ describe("router", () => {
     >();
   });
 
-  test("Concats prefix and path", () => {
-    type Both = ParsedConfig<{ prefix: "/hello"; path: "/sailor" }>;
-    type Prefix = ParsedConfig<{ prefix: "/hello" }>;
-    type Path = ParsedConfig<{ path: "/sailor" }>;
+  test("Creates a prefixed route fn", () => {
+    const { prefixed } = Routing.init();
 
-    const { route } = Routing.init();
-
-    route({ prefix: "/foo", path: "/bar" });
+    const userRoute = prefixed("/user/:id");
 
     const mid = new Midwinter().use(
-      route({
-        prefix: "/foo/:id",
-        path: "/bar/:slug",
-        method: "get",
-      })
+      userRoute({ method: "get", path: "/name/:slug" })
     );
 
-    expectTypeOf<Both>().toEqualTypeOf<{
-      prefix: "/hello";
-      path: "/hello/sailor";
-    }>();
-    expectTypeOf<Prefix>().toEqualTypeOf<{
-      prefix: "/hello";
-      path: "/hello";
-    }>();
-    expectTypeOf<Path>().toEqualTypeOf<{
-      path: "/sailor";
-    }>();
-    expectTypeOf<InferMeta<typeof mid>>().toEqualTypeOf<{
-      prefix: "/foo/:id";
-      path: "/foo/:id/bar/:slug";
-      method: "get";
-      params: ("id" | "slug")[];
-    }>();
+    type Meta = InferMeta<typeof mid>;
 
-    const handle = mid.end();
-    expectTypeOf(handle.meta.params).toEqualTypeOf<("id" | "slug")[]>();
-    expect(handle.meta.params).toEqual(["id", "slug"]);
+    expectTypeOf<Meta["method"]>().toEqualTypeOf<"get">();
+    expectTypeOf<Meta["path"]>().toEqualTypeOf<"/user/:id/name/:slug">();
+    expectTypeOf<Meta["params"]>().toEqualTypeOf<("id" | "slug")[]>();
   });
 });

@@ -3,70 +3,40 @@ import { createRouter as createRadixRouter } from "./routers/radix";
 import { createRouter as createLinearRouter } from "./routers/linear";
 import { RequestHandler } from "@/middleware/types";
 import { RouteInput } from "./routers/types";
-import { HttpMethodInput } from "../common";
-import { InferPathParams, parsePathParams } from "./util";
-import { ParsedConfig } from "./type";
+import { parsePathParams } from "./util";
+import {
+  InitRoutingReturn,
+  RouteHandlerList,
+  RouteHandlerMap,
+  RouterOpts,
+  RoutingOpts,
+} from "./type";
 
 export type RoutingInitOpts = {
   router?: typeof createLinearRouter;
 };
 
-export type RoutingOpts = {
-  path?: string;
-  method?: HttpMethodInput[] | HttpMethodInput;
-  prefix?: string;
-};
-export type RoutingOptsWithPath = {
-  path: string;
-  method?: HttpMethodInput[] | HttpMethodInput;
-  prefix?: string;
-};
-
-export type RouteHandlerList = RequestHandler[];
-export type RouteHandlerMap = Record<string, RequestHandler>;
-
-export type RouterOpts = {
-  onNotFound?: (request: Request) => Response;
-  onError?: (error: unknown) => Response;
-  /**
-   * @default false
-   */
-  keepTrailingSlashes?: boolean;
-};
-
-interface InitRoutingReturn {
-  createRouter(
-    routes: RouteHandlerList | RouteHandlerMap,
-    opts?: RouterOpts
-  ): (request: Request) => Promise<Response>;
-
-  // Route
-  route<const T extends RoutingOptsWithPath>(
-    config: T
-  ): Midwinter<{}, ParsedConfig<T>>;
-  route<const T extends RoutingOpts>(config: T): Midwinter<{}, T>;
-}
-
 export const init = (opts: RoutingInitOpts = {}): InitRoutingReturn => {
   const { router = createRadixRouter } = opts;
 
+  const route: InitRoutingReturn["route"] = <const T extends RoutingOpts>(
+    config: T
+  ): Midwinter<{}, T> => {
+    if (config.path == null) {
+      return new Midwinter(config);
+    }
+
+    return new Midwinter({
+      ...config,
+      params: parsePathParams(config.path),
+    });
+  };
+
   return {
-    route<const T extends RoutingOpts>(
-      config: T
-    ): Midwinter<{}, ParsedConfig<T>> {
-      const parsedConfig = {
-        ...config,
-        path: `${config.prefix ?? ""}${config.path ?? ""}`,
-      } as ParsedConfig<T>;
-
-      if (config.path == null) {
-        return new Midwinter(parsedConfig);
-      }
-
-      return new Midwinter({
-        ...parsedConfig,
-        params: parsePathParams(config.path),
-      });
+    route,
+    prefixed(prefix) {
+      return (config) =>
+        route({ ...config, path: `${prefix}${config.path ?? ""}` }) as any
     },
     createRouter(
       routes: RouteHandlerList | RouteHandlerMap,
@@ -85,18 +55,15 @@ export const init = (opts: RoutingInitOpts = {}): InitRoutingReturn => {
       const _routes: RouteInput<RequestHandler>[] = (
         Array.isArray(routes) ? routes : Object.values(routes)
       ).map((route) => {
-        const { method, path, prefix } = route.meta ?? {};
+        const { method, path } = route.meta ?? {};
 
         // TODO: Add warnings/validation
 
-        const _path =
-          typeof prefix === "string" && prefix.length > 0
-            ? `${prefix}${path}`
-            : String(path);
+        const _path = String(path);
 
         return {
           methods: Array.isArray(method) ? method : [String(method)],
-          path: keepTrailingSlashes ? _path : _path.replace(/\/$/, ""),
+          path: keepTrailingSlashes ? _path : _path.replace(/\/+$/, ""),
           payload: route,
         };
       });
