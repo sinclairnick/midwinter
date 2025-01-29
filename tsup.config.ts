@@ -1,6 +1,5 @@
 import { defineConfig } from "tsup";
-import pkg from "./package.json";
-import { writeFile } from "fs/promises";
+import { subExports } from "esbuild-sub-exports";
 
 const Exports = ["validation", "routing", "client-types", "cors", "otel"];
 
@@ -16,23 +15,5 @@ export default defineConfig({
   sourcemap: false,
   treeshake: "recommended",
   external: ["midwinter"],
-  async onSuccess() {
-    const _pkg = { ...pkg };
-    const pkgFiles = new Set(pkg.files);
-
-    for (const name of Exports) {
-      _pkg.exports[`./${name}`] = {
-        types: `./dist/${name}.d.ts`,
-        require: `./dist/${name}.js`,
-        import: `./dist/${name}.mjs`,
-      };
-
-      pkgFiles.add(`${name}.js`);
-      pkgFiles.add(`${name}.d.ts`);
-    }
-
-    _pkg.files = Array.from(pkgFiles);
-
-    await writeFile("./package.json", JSON.stringify(_pkg, null, 2));
-  },
+  esbuildPlugins: [subExports({ entries: Exports })],
 });
