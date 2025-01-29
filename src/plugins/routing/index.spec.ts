@@ -1,5 +1,5 @@
 import { Midwinter } from "../../";
-import { describe, expectTypeOf, test } from "vitest";
+import { describe, expect, expectTypeOf, test } from "vitest";
 import * as Routing from "./index";
 import { InferMeta } from "@/midwinter/infer";
 
@@ -58,5 +58,9 @@ describe("router", () => {
     expectTypeOf<Meta["method"]>().toEqualTypeOf<"get">();
     expectTypeOf<Meta["path"]>().toEqualTypeOf<"/user/:id/name/:slug">();
     expectTypeOf<Meta["params"]>().toEqualTypeOf<("id" | "slug")[]>();
+
+    const handle = mid.end();
+
+    expect(handle.meta.path).toBe("/user/:id/name/:slug");
   });
 });

@@ -140,6 +140,20 @@ describe("valid", () => {
       );
     });
 
+    test("Parses params", async () => {
+      const fetch = mid
+        .use(new Midwinter({ path: "/foo/:id" as const }))
+        .use(valid({ Params: WithId }))
+        .end((req, { params }) => {
+          return Response.json(params);
+        });
+
+      const response = await fetch(new Request(url + "/foo/123"));
+      const data = await response.json();
+
+      expect(data).toEqual({ id: "123" });
+    });
+
     test("Output: throws on invalid", async () => {
       const fetch = mid.use(valid({ Output: WithId })).end(
         output((req, ctx, meta) => {

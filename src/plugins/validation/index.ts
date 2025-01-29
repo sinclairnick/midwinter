@@ -12,8 +12,11 @@ export const init = () => {
    * query, params, body and headers being added to the ctx.
    */
   const valid = <T extends ValidOpts>(opts: T) => {
-    return new Midwinter(opts).use(async (req) => {
-      const parse = makeParseFn(req, opts);
+    return new Midwinter(opts).use(async (req, _, meta) => {
+      const parse = makeParseFn(req, {
+        ...opts,
+        path: meta.path ? String(meta.path) : undefined,
+      });
 
       return { ...(await parse()) };
     });
@@ -21,8 +24,13 @@ export const init = () => {
 
   /** Add lazy validation that can be triggered via the `ctx.parse()` function */
   const validLazy = <T extends ValidOpts>(opts: T) => {
-    return new Midwinter(opts).use((req) => {
-      return { parse: makeParseFn(req, opts) };
+    return new Midwinter(opts).use((req, _, meta) => {
+      return {
+        parse: makeParseFn(req, {
+          ...opts,
+          path: meta.path ? String(meta.path) : undefined,
+        }),
+      };
     });
   };
 
