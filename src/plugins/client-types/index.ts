@@ -14,29 +14,25 @@ export type InferConfig<THandler extends RequestHandler> =
           : InferIn<$Meta["Params"]>;
         Body: InferIn<$Meta["Body"]>;
         Output: Infer<$Meta["Output"]>;
-        Method: $Meta["method"] extends string[]
-          ? $Meta["method"][number]
-          : $Meta["method"];
-        Path: $Meta["path"];
       }
     : never;
 
-type WildcardToString<T extends string> = T extends "*" ? string : T;
+type FormatMethod<T extends string> = T extends "*" ? string : T;
 
 export type InferMethod<THandler extends RequestHandler> =
   THandler extends RequestHandler<infer $Meta, any>
     ? $Meta["method"] extends string
-      ? WildcardToString<$Meta["method"]>
+      ? FormatMethod<$Meta["method"]>
       : $Meta["method"] extends string[]
-      ? WildcardToString<$Meta["method"][number]>
+      ? FormatMethod<$Meta["method"][number]>
       : never
     : never;
 
+type ToString<T> = T extends string ? T : "";
+
 export type InferPath<THandler extends RequestHandler> =
   THandler extends RequestHandler<infer $Meta, any>
-    ? $Meta["path"] extends string[]
-      ? $Meta["path"][number]
-      : $Meta["path"]
+    ? `${ToString<$Meta["prefix"]>}${ToString<$Meta["path"]>}`
     : never;
 
 export type InferAppInput = Record<PropertyKey, RequestHandler>;

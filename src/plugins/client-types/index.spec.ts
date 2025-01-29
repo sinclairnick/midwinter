@@ -17,7 +17,29 @@ describe("Client Types", () => {
     };
     type App = InferApp<typeof app>;
 
-    expectTypeOf<App["GET /foo"]["Path"]>().toEqualTypeOf<"/foo">();
+    expectTypeOf<keyof App>().toEqualTypeOf<"GET /foo">();
+  });
+
+  test("Infers path when prefix set and path present", () => {
+    const app = {
+      route: new Midwinter()
+        .use(route({ path: "/foo", method: "get", prefix: "/bar" }))
+        .end(() => Response.json({})),
+    };
+    type App = InferApp<typeof app>;
+
+    expectTypeOf<keyof App>().toEqualTypeOf<"GET /bar/foo">();
+  });
+
+  test("Infers path when prefix set and path absent", () => {
+    const app = {
+      route: new Midwinter()
+        .use(route({ method: "get", prefix: "/bar" }))
+        .end(() => Response.json({})),
+    };
+    type App = InferApp<typeof app>;
+
+    expectTypeOf<keyof App>().toEqualTypeOf<"GET /bar">();
   });
 
   test("Infers method", () => {
@@ -28,7 +50,7 @@ describe("Client Types", () => {
     };
     type App = InferApp<typeof app>;
 
-    expectTypeOf<App["GET /foo"]["Method"]>().toEqualTypeOf<"get">();
+    expectTypeOf<keyof App>().toEqualTypeOf<"GET /foo">();
   });
 
   test("Infers query types", () => {
