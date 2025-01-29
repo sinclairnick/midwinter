@@ -25,3 +25,11 @@ export type AnyCtx =
 export type AnyMeta =
   // This value param must be unknown otherwise arbitrary functions are accepted
   Record<PropertyKey, unknown>;
+
+export type Strip<T, U> = {
+  [Key in keyof T as [T[Key]] extends [U] ? never : Key]: T[Key];
+};
+
+export type NonReadonly<T> = {
+  -readonly [Key in keyof T]: T[Key];
+};

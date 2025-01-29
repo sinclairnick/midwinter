@@ -5,6 +5,7 @@ import { RequestHandler } from "@/middleware/types";
 import { RouteInput } from "./routers/types";
 import { HttpMethodInput } from "../common";
 import { InferPathParams, parsePathParams } from "./util";
+import { ParsedConfig } from "./type";
 
 export type RoutingInitOpts = {
   router?: typeof createLinearRouter;
@@ -42,7 +43,7 @@ interface InitRoutingReturn {
   // Route
   route<const T extends RoutingOptsWithPath>(
     config: T
-  ): Midwinter<{}, T & { params: InferPathParams<T["path"]> }>;
+  ): Midwinter<{}, ParsedConfig<T>>;
   route<const T extends RoutingOpts>(config: T): Midwinter<{}, T>;
 }
 
@@ -50,13 +51,20 @@ export const init = (opts: RoutingInitOpts = {}): InitRoutingReturn => {
   const { router = createRadixRouter } = opts;
 
   return {
-    route<const T extends RoutingOpts>(config: T): Midwinter<{}, T> {
+    route<const T extends RoutingOpts>(
+      config: T
+    ): Midwinter<{}, ParsedConfig<T>> {
+      const parsedConfig = {
+        ...config,
+        path: `${config.prefix ?? ""}${config.path ?? ""}`,
+      } as ParsedConfig<T>;
+
       if (config.path == null) {
-        return new Midwinter(config);
+        return new Midwinter(parsedConfig);
       }
 
       return new Midwinter({
-        ...config,
+        ...parsedConfig,
         params: parsePathParams(config.path),
       });
     },

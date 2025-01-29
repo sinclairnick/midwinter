@@ -6,9 +6,9 @@ export type InferConfig<THandler extends RequestHandler> =
   THandler extends RequestHandler<infer $Meta, any>
     ? {
         Query: InferIn<$Meta["Query"]>;
-        Params: $Meta["params"] extends string
+        Params: $Meta["params"] extends string[]
           ? MergeObjectsShallow<
-              { [Key in $Meta["params"]]: string },
+              { [Key in $Meta["params"][number]]: string },
               DefaultTo<InferIn<$Meta["Params"]>, {}>
             >
           : InferIn<$Meta["Params"]>;
@@ -28,12 +28,8 @@ export type InferMethod<THandler extends RequestHandler> =
       : never
     : never;
 
-type ToString<T> = T extends string ? T : "";
-
 export type InferPath<THandler extends RequestHandler> =
-  THandler extends RequestHandler<infer $Meta, any>
-    ? `${ToString<$Meta["prefix"]>}${ToString<$Meta["path"]>}`
-    : never;
+  THandler extends RequestHandler<infer $Meta, any> ? $Meta["path"] : never;
 
 export type InferAppInput = Record<PropertyKey, RequestHandler>;
 
