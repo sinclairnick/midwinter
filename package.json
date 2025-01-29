@@ -1,7 +1,7 @@
 {
   "name": "midwinter",
   "description": "A next-gen middleware engine built for the WinterCG environments.",
-  "version": "0.22.0",
+  "version": "0.23.0",
   "author": {
     "name": "Nick Sinclair",
     "email": "nicksinclair@xtra.co.nz",
@@ -89,7 +89,7 @@
   },
   "private": false,
   "scripts": {
-    "build": "tsup",
+    "build": "tsup-node",
     "check": "tsc --noEmit",
     "publish-pkg": "pnpm run build && pnpm publish --access=public --no-git-checks",
     "test": "vitest",
