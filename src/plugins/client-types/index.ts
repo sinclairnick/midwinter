@@ -1,20 +1,23 @@
 import { RequestHandler } from "@/index";
-import { DefaultTo, MergeObjectsShallow } from "@/types/util";
+import { DefaultTo, MergeObjectsShallow, Strip } from "@/types/util";
 import { Infer, InferIn } from "schema-shift";
 
 export type InferConfig<THandler extends RequestHandler> =
   THandler extends RequestHandler<infer $Meta, any>
-    ? {
-        Query: InferIn<$Meta["Query"]>;
-        Params: $Meta["params"] extends string[]
-          ? MergeObjectsShallow<
-              { [Key in $Meta["params"][number]]: string },
-              DefaultTo<InferIn<$Meta["Params"]>, {}>
-            >
-          : InferIn<$Meta["Params"]>;
-        Body: InferIn<$Meta["Body"]>;
-        Output: Infer<$Meta["Output"]>;
-      }
+    ? Strip<
+        {
+          Query: InferIn<$Meta["Query"]>;
+          Params: $Meta["params"] extends string[]
+            ? MergeObjectsShallow<
+                { [Key in $Meta["params"][number]]: string },
+                DefaultTo<InferIn<$Meta["Params"]>, {}>
+              >
+            : InferIn<$Meta["Params"]>;
+          Body: InferIn<$Meta["Body"]>;
+          Output: Infer<$Meta["Output"]>;
+        },
+        never
+      >
     : never;
 
 export type FormatMethod<T extends string> = T extends "*" ? string : T;

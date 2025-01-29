@@ -28,8 +28,12 @@ export type AnyMeta =
 
 export type Strip<T, U> = {
   [Key in keyof T as [T[Key]] extends [U] ? never : Key]: T[Key];
-};
+} & {};
 
 export type NonReadonly<T> = {
   -readonly [Key in keyof T]: T[Key];
 };
+
+export type Map<T, From, To> = {
+  [Key in keyof T]: [T[Key]] extends [From] ? To : T[Key];
+} & {};

@@ -128,4 +128,15 @@ describe("Client Types", () => {
 
     expectTypeOf<keyof App>().toEqualTypeOf<"POST /foo">();
   });
+
+  test("Strips never values", () => {
+    const app = {
+      routeB: new Midwinter()
+        .use(route({ path: "/foo", method: "post" }))
+        .end(() => Response.json({})),
+    };
+    type App = InferApp<typeof app>;
+
+    expectTypeOf<keyof App["POST /foo"]>().toEqualTypeOf<never>();
+  });
 });
