@@ -111,4 +111,21 @@ describe("Client Types", () => {
 
     expectTypeOf<keyof App>().toEqualTypeOf<"GET /foo" | "POST /foo">();
   });
+
+  test("Only includes fully specified routes with path and method", () => {
+    const app = {
+      routeA: new Midwinter()
+        .use(route({ method: "get" }))
+        .end(() => Response.json({})),
+      routeB: new Midwinter()
+        .use(route({ path: "/foo", method: "post" }))
+        .end(() => Response.json({})),
+      routeC: new Midwinter()
+        .use(route({ path: "/bar" }))
+        .end(() => Response.json({})),
+    };
+    type App = InferApp<typeof app>;
+
+    expectTypeOf<keyof App>().toEqualTypeOf<"POST /foo">();
+  });
 });

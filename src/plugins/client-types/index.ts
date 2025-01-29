@@ -29,12 +29,12 @@ export type InferMethod<THandler extends RequestHandler> =
     : never;
 
 export type InferPath<THandler extends RequestHandler> =
-  THandler extends RequestHandler<infer $Meta, any> ? $Meta["path"] : never;
+  THandler["meta"]["path"] extends string ? THandler["meta"]["path"] : never;
 
 export type InferAppInput = Record<PropertyKey, RequestHandler>;
 
 export type InferApp<TInput extends InferAppInput> = {
-  [Key in keyof TInput as `${Uppercase<
-    InferMethod<TInput[Key]> & string
-  >} ${InferPath<TInput[Key]> & string}`]: InferConfig<TInput[Key]>;
+  [Key in keyof TInput as `${Uppercase<InferMethod<TInput[Key]>>} ${InferPath<
+    TInput[Key]
+  >}`]: InferConfig<TInput[Key]>;
 };
