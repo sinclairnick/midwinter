@@ -639,3 +639,26 @@ export type AppDef = ClientTypes.InferApp<typeof AppRoutes>;
 ```
 
 </details>
+
+### Open Telemetry
+
+<details>
+<summary>Expand</summary>
+
+TODO: Add docs
+
+```ts
+import * as Otel from "midwinter/otel";
+
+const { otel } = Otel.init();
+
+new Midwinter().use(otel());
+```
+
+</details>
+
+### OpenAPI
+
+> Coming soon
+
+...
