@@ -6,53 +6,47 @@ _Middleware + WinterCG = Midwinter_
 
 </center>
 
+Midwinter is a plugin-based middleware engine used to build HTTP backend applications.
+
+The main innovation driving Midwinter is enabling middleware to declare _metadata_. This enables powerful introspection and static analysis, which in turn enables an infinitely flexible plugin system.
+
+The plugin system is so powerful that even core functionality like routing can happily exist as a plugin.
+
 ```sh
 npm i midwinter
 ```
 
-Using Midwinter, we can define and execute middleware which can additionally _provide metadata and type information_. This, in turn, enables a very powerful plugin system prohibited by traditional approaches.
-
 > [!IMPORTANT]  
-> Midwinter is currently in beta status. It won't be fundamentally overhauled but may experience some breaking API changes.
+> Midwinter is currently in beta status. It won't be fundamentally overhauled but may experience some breaking API changes. That said, it is currently used in production.
 
-## Overview
+## Motivation
 
-Middleware inherently changes how our backend applications behave. However, exactly what is changed – at runtime and at rest – is often unclear. Midwinter enables middleware to declare how it changes our app as a whole and how it might change the context during a request lifecycle.
+When we add middleware to our applications, it might change a `req` object, add some routes, or something else entirely. As we build up an increasingly complex web of routes, each piece of middleware becomes impossible to track and is essentially a black box.
 
-> For example, a given middleware might add a `req.user`, or it might add a new `/route` to our app
-
-Allowing middleware to define metadata that is available to both static and runtime environments means the core of Midwinter is very minimal. This paradigm enables plugins to become deeply integrated, and yet trivially interchangeable and extensible.
+To improve this situation, we can inform both static and runtime environments as to how our application behaves, in the form of _types_ and _metadata_, respectively. In doing so, we can offload fundamental functionality to plugins; programmatically introspect and understand our applications; and trace how our request context changes over time, via TypeScript.
 
 ## Basic Usage
 
 ```ts
-// Define
-
-const withPath = <T>(path: T) => new Midwinter({ path });
-
-const withAuth = new Midwinter().use((req, ctx) => {
-  return { userId: "123" };
+const withAuth = new Midwinter({
+  requiresAuth: true, // Define metadata (optional)
+}).use((req, ctx) => {
+  return { userId: "123" }; // Add data to request context
 });
 
-const handle = withAuth
-  .use(withPath("/me")) // use middleware
+const getUser = new Midwinter()
+  .use(withAuth) // Apply middleware
   .end((req, ctx) => {
-    const { userId } = ctx; // inferred types
+    const { userId } = ctx;
 
     return Response.json({ userId });
   });
 
-// Invoke
-
-const response = await handle(new Request(/*...*/));
+const response = await getUser(new Request(/*...*/));
 
 await response.json(); // { userId: "123" }
 
-// Introspect
-
-handle.path === "/me"; // true
-
-typeof handle.path; // /me
+getUser.meta.requiresAuth; // true
 ```
 
 ## Table of Contents
@@ -63,12 +57,14 @@ typeof handle.path; // /me
   - [Request Context](#request-context)
   - [Listening to responses](#listening-to-responses)
   - [Chaining](#chaining)
-  - [`.end`ing pipelines](#-end-ing-pipelines)
+  - [`.end`ing pipelines](#ending-pipelines)
   - [Metadata](#metadata)
 - [Plugins](#plugins)
   - [Official Plugins](#official-plugins)
   - [Routing](#routing)
   - [Validation](#validation)
+  - [Cors](#cors)
+  - [Client Types](#client-types)
 
 ### Key Concepts
 
@@ -107,6 +103,9 @@ const handle = new Midwinter(meta)
 ```
 
 Midwinter is remarkably simple and deceptively powerful. With only this API, we can create complex middleware pipelines and defer much of what might exist in a framework to plugins instead, without any loss of _functionality_ or _ergonomics_.
+
+> [!NOTE]  
+> These docs are currently a work in progress. They are mostly there but may hve the odd gap or minor error. Please raise an issue if you run into anything.
 
 ### Getting Started
 
@@ -486,23 +485,21 @@ const handle = new Midwinter()
   });
 ```
 
-We can optionally specify a prefix which will continue along any subsequent middleware pipelines.
+To more easily group routes, while avoiding duplication, we can create a prefixed route utility like so.
 
 ```ts
-const apiRoute = new Midwinter().use(
-  route({
-    prefix: "/api/v1",
-  })
-);
+const apiRoute = prefixed("/api/v1")
 
-const getPost = apiRoute
-	.use(route({
+const getPost = new Midwinter()
+	.use(apiRoute({
 		path: "/post/:id",
 		method: "get
 	}))
 	.end(() => {
 		// ...
 	})
+
+getPost.meta.path // /api/v1/post/:id
 ```
 
 #### `router`
