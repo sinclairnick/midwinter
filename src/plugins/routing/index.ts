@@ -1,6 +1,5 @@
-import { Midwinter } from "midwinter";
+import { AnyMeta, Midwinter } from "midwinter";
 import { createRouter as createRadixRouter } from "./routers/radix";
-import { createRouter as createLinearRouter } from "./routers/linear";
 import { RequestHandler } from "@/middleware/types";
 import { RouteInput } from "./routers/types";
 import { parsePathParams } from "./util";
@@ -11,12 +10,13 @@ import {
   RouterOpts,
   RoutingOpts,
 } from "./types";
+import { WILDCARD_METHOD_KEY } from "./routers/util";
 
 export type * from "./types";
 export type * from "./util";
 
 export type RoutingInitOpts = {
-  router?: typeof createLinearRouter;
+  router?: typeof createRadixRouter;
 };
 
 export const init = (opts: RoutingInitOpts = {}): InitRoutingReturn => {
@@ -55,21 +55,24 @@ export const init = (opts: RoutingInitOpts = {}): InitRoutingReturn => {
         keepTrailingSlashes = false,
       } = opts;
 
-      const _routes: RouteInput<RequestHandler>[] = (
-        Array.isArray(routes) ? routes : Object.values(routes)
-      ).map((route) => {
-        const { method, path } = route.meta ?? {};
+      const _routes: RouteInput<
+        RequestHandler<AnyMeta, Response | undefined>
+      >[] = (Array.isArray(routes) ? routes : Object.values(routes)).map(
+        (route) => {
+          const { method, path } = route.meta ?? {};
 
-        // TODO: Add warnings/validation
+          // TODO: Add warnings/validation
 
-        const _path = String(path);
+          const _path = String(path);
+          const _method = method == null ? WILDCARD_METHOD_KEY : method;
 
-        return {
-          methods: Array.isArray(method) ? method : [String(method)],
-          path: keepTrailingSlashes ? _path : _path.replace(/\/+$/, ""),
-          payload: route,
-        };
-      });
+          return {
+            methods: Array.isArray(_method) ? _method : [String(_method)],
+            path: keepTrailingSlashes ? _path : _path.replace(/\/+$/, ""),
+            payload: route,
+          };
+        }
+      );
 
       const _router = router(_routes);
 
@@ -78,7 +81,8 @@ export const init = (opts: RoutingInitOpts = {}): InitRoutingReturn => {
           const handler = _router.match(request);
 
           if (handler) {
-            return await handler(request);
+            const response = await handler(request);
+            if (response) return response;
           }
 
           return onNotFound(request);
@@ -90,5 +94,5 @@ export const init = (opts: RoutingInitOpts = {}): InitRoutingReturn => {
   };
 };
 
-export const LinearRouter = createLinearRouter;
+// export const LinearRouter = createLinearRouter;
 export const RadixRouter = createRadixRouter;

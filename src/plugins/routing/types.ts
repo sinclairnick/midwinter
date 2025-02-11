@@ -1,4 +1,4 @@
-import { MergeObjectsShallow, Strip } from "@/types/util";
+import { AnyMeta, MergeObjectsShallow, Strip } from "@/types/util";
 import { InferPathParams } from "./util";
 import { Midwinter, RequestHandler } from "midwinter";
 import { HttpMethodInput } from "../common";
@@ -12,8 +12,11 @@ export type RoutingOptsWithPath = Omit<RoutingOpts, "path"> & {
   method?: HttpMethodInput[] | HttpMethodInput;
 };
 
-export type RouteHandlerList = RequestHandler[];
-export type RouteHandlerMap = Record<string, RequestHandler>;
+export type RouteHandlerList = RequestHandler<AnyMeta, Response | undefined>[];
+export type RouteHandlerMap = Record<
+  string,
+  RequestHandler<AnyMeta, Response | undefined>
+>;
 
 export type RouterOpts = {
   onNotFound?: (request: Request) => Response;
