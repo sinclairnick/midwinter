@@ -14,6 +14,9 @@ importers:
       '@opentelemetry/semantic-conventions':
         specifier: ^1.28.0
         version: 1.28.0
+      '@standard-schema/spec':
+        specifier: ^1.0.0
+        version: 1.0.0
       radix3:
         specifier: ^1.1.2
         version: 1.1.2
@@ -40,8 +43,8 @@ importers:
         specifier: ^2.1.8
         version: 2.1.8(@types/node@20.12.14)
       zod:
-        specifier: ^3.23.8
-        version: 3.23.8
+        specifier: ^3.24.2
+        version: 3.24.2
 
 packages:
 
@@ -470,6 +473,9 @@ packages:
 
   '@sinclair/typebox@0.32.35':
     resolution: {integrity: sha512-Ul3YyOTU++to8cgNkttakC0dWvpERr6RYoHO2W47DLbFvrwBDJUY31B1sImH6JZSYc4Kt4PyHtoPNu+vL2r2dA==}
+
+  '@standard-schema/spec@1.0.0':
+    resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
 
   '@types/bun@1.1.14':
     resolution: {integrity: sha512-opVYiFGtO2af0dnWBdZWlioLBoxSdDO5qokaazLhq8XQtGZbY4pY3/JxY8Zdf/hEwGubbp7ErZXoN1+h2yesxA==}
@@ -1167,8 +1173,8 @@ packages:
   yup@1.6.1:
     resolution: {integrity: sha512-JED8pB50qbA4FOkDol0bYF/p60qSEDQqBD0/qeIrUCG1KbPBIQ776fCUNb9ldbPcSTxA69g/47XTo4TqWiuXOA==}
 
-  zod@3.23.8:
-    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+  zod@3.24.2:
+    resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
 
 snapshots:
 
@@ -1427,6 +1433,8 @@ snapshots:
 
   '@sinclair/typebox@0.32.35':
     optional: true
+
+  '@standard-schema/spec@1.0.0': {}
 
   '@types/bun@1.1.14':
     dependencies:
@@ -1907,7 +1915,7 @@ snapshots:
       superstruct: 1.0.4
       valibot: 0.37.0(typescript@5.7.2)
       yup: 1.6.1
-      zod: 3.23.8
+      zod: 3.24.2
     transitivePeerDependencies:
       - typescript
 
@@ -2151,4 +2159,4 @@ snapshots:
       type-fest: 2.19.0
     optional: true
 
-  zod@3.23.8: {}
+  zod@3.24.2: {}
