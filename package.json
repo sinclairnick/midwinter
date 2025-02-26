@@ -1,1 +1,122 @@
-{"name":"midwinter","description":"A next-gen middleware engine built for the WinterCG environments.","version":"0.26.0","author":{"name":"Nick Sinclair","email":"nicksinclair@xtra.co.nz","url":"https://github.com/sinclairnick"},"devDependencies":{"@types/bun":"^1.1.14","esbuild-sub-exports":"^0.10.0","tsup":"^8.0.1","typescript":"^5.7.2","vitest":"^2.1.8","zod":"^3.24.2"},"keywords":["midwinter","wintercg","middleware","engine"],"files":["dist","README.md","LICENSE","validation.js","validation.d.ts","routing.js","routing.d.ts","client-types.js","client-types.d.ts","cors.js","cors.d.ts","otel.js","otel.d.ts","dist/validation.mjs","dist/validation.js","dist/validation.d.ts","dist/routing.mjs","dist/routing.js","dist/routing.d.ts","dist/client-types.mjs","dist/client-types.js","dist/client-types.d.ts","dist/cors.mjs","dist/cors.js","dist/cors.d.ts","dist/otel.mjs","dist/otel.js","dist/otel.d.ts","dist/validation.ts","dist/routing.ts","dist/client-types.ts","dist/cors.ts","dist/otel.ts","dist/util.js","dist/util.mjs","dist/util.d.ts","dist/util.ts","util.js","util.d.ts"],"license":"MIT","main":"dist/index.js","module":"dist/index.mjs","types":"dist/index.d.ts","exports":{".":{"types":"./dist/index.d.ts","require":"./dist/index.js","import":"./dist/index.mjs"},"./validation":{"types":"./dist/validation.d.ts","import":"./dist/validation.mjs","require":"./dist/validation.js"},"./routing":{"types":"./dist/routing.d.ts","import":"./dist/routing.mjs","require":"./dist/routing.js"},"./client-types":{"types":"./dist/client-types.d.ts","import":"./dist/client-types.mjs","require":"./dist/client-types.js"},"./cors":{"types":"./dist/cors.d.ts","import":"./dist/cors.mjs","require":"./dist/cors.js"},"./otel":{"types":"./dist/otel.d.ts","import":"./dist/otel.mjs","require":"./dist/otel.js"},"./util":{"types":"./dist/util.d.ts","import":"./dist/util.mjs","require":"./dist/util.js"}},"private":false,"scripts":{"build":"tsup-node","check":"tsc --noEmit","publish-pkg":"pnpm run build && pnpm publish --access=public --no-git-checks","test":"vitest","verify":"pnpm check && pnpm test"},"sideEffects":false,"dependencies":{"@opentelemetry/api":"^1.9.0","@opentelemetry/semantic-conventions":"^1.28.0","radix3":"^1.1.2","schema-shift":"^0.4.0","urlpattern-polyfill":"^10.0.0"}}
+{
+  "name": "midwinter",
+  "description": "A next-gen middleware engine built for the WinterCG environments.",
+  "version": "0.27.0",
+  "author": {
+    "name": "Nick Sinclair",
+    "email": "nicksinclair@xtra.co.nz",
+    "url": "https://github.com/sinclairnick"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "esbuild-sub-exports": "^0.10.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "zod": "^3.24.2"
+  },
+  "keywords": [
+    "midwinter",
+    "wintercg",
+    "middleware",
+    "engine"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "validation.js",
+    "validation.d.ts",
+    "routing.js",
+    "routing.d.ts",
+    "client-types.js",
+    "client-types.d.ts",
+    "cors.js",
+    "cors.d.ts",
+    "otel.js",
+    "otel.d.ts",
+    "dist/validation.mjs",
+    "dist/validation.js",
+    "dist/validation.d.ts",
+    "dist/routing.mjs",
+    "dist/routing.js",
+    "dist/routing.d.ts",
+    "dist/client-types.mjs",
+    "dist/client-types.js",
+    "dist/client-types.d.ts",
+    "dist/cors.mjs",
+    "dist/cors.js",
+    "dist/cors.d.ts",
+    "dist/otel.mjs",
+    "dist/otel.js",
+    "dist/otel.d.ts",
+    "dist/validation.ts",
+    "dist/routing.ts",
+    "dist/client-types.ts",
+    "dist/cors.ts",
+    "dist/otel.ts",
+    "dist/util.js",
+    "dist/util.mjs",
+    "dist/util.d.ts",
+    "dist/util.ts",
+    "util.js",
+    "util.d.ts"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    },
+    "./validation": {
+      "types": "./dist/validation.d.ts",
+      "import": "./dist/validation.mjs",
+      "require": "./dist/validation.js"
+    },
+    "./routing": {
+      "types": "./dist/routing.d.ts",
+      "import": "./dist/routing.mjs",
+      "require": "./dist/routing.js"
+    },
+    "./client-types": {
+      "types": "./dist/client-types.d.ts",
+      "import": "./dist/client-types.mjs",
+      "require": "./dist/client-types.js"
+    },
+    "./cors": {
+      "types": "./dist/cors.d.ts",
+      "import": "./dist/cors.mjs",
+      "require": "./dist/cors.js"
+    },
+    "./otel": {
+      "types": "./dist/otel.d.ts",
+      "import": "./dist/otel.mjs",
+      "require": "./dist/otel.js"
+    },
+    "./util": {
+      "types": "./dist/util.d.ts",
+      "import": "./dist/util.mjs",
+      "require": "./dist/util.js"
+    }
+  },
+  "private": false,
+  "scripts": {
+    "build": "tsup-node",
+    "check": "tsc --noEmit",
+    "publish-pkg": "pnpm run build && pnpm publish --access=public --no-git-checks",
+    "test": "vitest",
+    "verify": "pnpm check && pnpm test"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/semantic-conventions": "^1.28.0",
+    "radix3": "^1.1.2",
+    "schema-shift": "^0.4.0",
+    "urlpattern-polyfill": "^10.0.0"
+  }
+}
