@@ -1,10 +1,10 @@
-import { Infer, parse } from "schema-shift";
+import { parse } from "schema-shift";
 import {
-  Default,
   InputTypeKey,
   ParseInputsFn,
   ValidSchemaOpts,
   ValidSchemaCtx,
+  ParseQueryStringFn,
 } from "./types";
 
 const cached = <T extends () => any>(fn: T) => {
@@ -21,12 +21,19 @@ const cached = <T extends () => any>(fn: T) => {
 
 export type ParseOpts = ValidSchemaOpts & {
   path?: string;
+  parseQueryString?: ParseQueryStringFn;
 };
 
 export type ParserFn<T = any> = (req: Request, opts: ParseOpts) => T;
 
 export const parseQuery = ((req, opts) => {
   const url = new URL(req.url);
+
+  if (opts.parseQueryString) {
+    const result = opts.parseQueryString(url);
+
+    return opts.Query ? parse(opts.Query, result) : result;
+  }
 
   const map: Record<string, any> = {};
   for (const [key, value] of url.searchParams.entries()) {

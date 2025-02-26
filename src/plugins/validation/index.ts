@@ -9,6 +9,7 @@ import {
   ValidLazySchemaCtx,
   ValidLazyTypeCtx,
   InferMetaOutputIn,
+  ParseQueryStringFn,
 } from "./types";
 import { makeParseFn } from "./parsing";
 import { parse } from "schema-shift";
@@ -19,7 +20,11 @@ import { EndMiddleware } from "@/middleware/types";
 export type * from "./types";
 export type * from "./parsing";
 
-export interface ValidPlugin {
+export interface ValidationOpts {
+  parseQueryString?: ParseQueryStringFn;
+}
+
+export interface ValidationPlugin {
   // VALID
   // With types only
   /**
@@ -71,7 +76,9 @@ export interface ValidPlugin {
   >;
 }
 
-export const init = (): ValidPlugin => {
+export const init = (opts?: ValidationOpts): ValidationPlugin => {
+  const { parseQueryString } = opts ?? {};
+
   return {
     valid<T extends ValidSchemaOpts>(opts?: T) {
       return new Midwinter(opts as T & Typify<ValidSchemaMeta<T>>).use(
@@ -79,6 +86,7 @@ export const init = (): ValidPlugin => {
           const parse = makeParseFn(req, {
             ...opts,
             path: meta.path ? String(meta.path) : undefined,
+            parseQueryString,
           });
 
           return { ...(await parse()) };
@@ -92,6 +100,7 @@ export const init = (): ValidPlugin => {
             parse: makeParseFn(req, {
               ...opts,
               path: meta.path ? String(meta.path) : undefined,
+              parseQueryString,
             }),
           };
         }

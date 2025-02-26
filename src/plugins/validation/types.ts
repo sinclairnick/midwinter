@@ -99,3 +99,5 @@ export interface ParseInputsFn<T extends Record<InputTypeKey, any>> {
 
 export type InferMetaOutputIn<TMeta extends AnyMeta> =
   TMeta[TypeKey<"Output_In">];
+
+export type ParseQueryStringFn = (url: URL) => Record<PropertyKey, unknown>;

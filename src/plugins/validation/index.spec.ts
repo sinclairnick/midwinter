@@ -4,6 +4,7 @@ import { init } from ".";
 import { InferCtx, InferMeta } from "../../midwinter/infer";
 import { Midwinter } from "midwinter";
 import { TypeOf } from "../util";
+import qs from "query-string";
 
 describe("valid", () => {
   const mid = new Midwinter();
@@ -213,6 +214,25 @@ describe("valid", () => {
       await expect(fetch(new Request(url + "?id=123"))).resolves.toBeInstanceOf(
         Response
       );
+    });
+
+    test("Query: Respects qs parser", async () => {
+      const { valid } = init({
+        parseQueryString: (url) => {
+          const result = qs.parse(url.search);
+          return result;
+        },
+      });
+      const fetch = mid
+        .use(valid({ Query: z.object({ id: z.string().array() }) }))
+        .end((req, { query }) => {
+          return Response.json(query);
+        });
+
+      const res = await fetch(new Request(url + "?id=123&id=456"));
+      const result = await res.json();
+
+      expect(result).toEqual({ id: ["123", "456"] });
     });
 
     test("Parses params", async () => {
