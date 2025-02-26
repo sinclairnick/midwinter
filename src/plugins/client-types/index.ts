@@ -1,20 +1,20 @@
 import { RequestHandler } from "@/index";
-import { DefaultTo, MergeObjectsShallow, Strip } from "@/types/util";
-import { Infer, InferIn } from "schema-shift";
+import { MergeObjectsShallow, Strip, StripUnknown } from "@/types/util";
+import { InferTypeof, TypeKey } from "../util";
 
 export type InferConfig<THandler extends RequestHandler> =
   THandler extends RequestHandler<infer $Meta, any>
     ? Strip<
         {
-          Query: InferIn<$Meta["Query"]>;
+          Query: InferTypeof<$Meta[TypeKey<"QueryIn">]>;
           Params: $Meta["params"] extends string[]
             ? MergeObjectsShallow<
                 { [Key in $Meta["params"][number]]: string },
-                DefaultTo<InferIn<$Meta["Params"]>, {}>
+                InferTypeof<$Meta[TypeKey<"ParamsIn">], {}>
               >
-            : InferIn<$Meta["Params"]>;
-          Body: InferIn<$Meta["Body"]>;
-          Output: Infer<$Meta["Output"]>;
+            : InferTypeof<$Meta[TypeKey<"ParamsIn">]>;
+          Body: InferTypeof<$Meta[TypeKey<"BodyIn">]>;
+          Output: InferTypeof<$Meta[TypeKey<"Output">]>;
         },
         never
       >

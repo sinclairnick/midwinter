@@ -1,52 +1,68 @@
-import { AnyCtx, AnyMeta, Awaitable } from "@/types/util";
-import { Parser } from "schema-shift";
+import { AnyCtx, AnyMeta, Awaitable, Strip } from "@/types/util";
+import { Infer, InferIn, Parser } from "schema-shift";
+import { Typify } from "../util";
 
-export type ValidReturn<
-  TQuery = unknown,
-  TParams = unknown,
-  TBody = unknown,
-  THeaders = unknown
-> = {
-  query: TQuery;
-  params: TParams;
-  body: TBody;
-  headers: THeaders;
-};
+// Schema values
 
-export type InputTypeKey = "params" | "query" | "body" | "headers";
-
-export interface ParseInputsFn<
-  TParams = Default["Params"],
-  TQuery = Default["Query"],
-  TBody = Default["Body"],
-  THeaders = Default["Headers"]
-> {
-  /** Parses the selected input part */
-  <T extends InputTypeKey>(key: T): Promise<
-    {
-      params: TParams;
-      query: TQuery;
-      body: TBody;
-      headers: THeaders;
-    }[T]
-  >;
-
-  /** Parses all inputs and returns as an object */
-  (): Promise<{
-    params: TParams;
-    query: TQuery;
-    body: TBody;
-    headers: THeaders;
-  }>;
-}
-
-export type ValidOpts = {
+export type ValidSchemaOpts = {
   Query?: Parser;
   Params?: Parser;
   Body?: Parser;
   Headers?: Parser;
   Output?: Parser;
 };
+
+export type ValidSchemaCtx<T extends ValidSchemaOpts> = {
+  params: unknown extends T["Params"] ? Default["Params"] : Infer<T["Params"]>;
+  query: unknown extends T["Query"] ? Default["Query"] : Infer<T["Query"]>;
+  body: unknown extends T["Body"] ? Default["Body"] : Infer<T["Body"]>;
+  headers: unknown extends T["Headers"]
+    ? Default["Headers"]
+    : Infer<T["Headers"]>;
+};
+
+export type ValidLazySchemaCtx<T extends ValidSchemaOpts> = {
+  parse: ParseInputsFn<ValidSchemaCtx<T>>;
+};
+
+export type ValidSchemaMeta<T extends ValidSchemaOpts> = T &
+  Typify<
+    Strip<
+      // In and Out Variants
+      {
+        [Key in keyof T]: Infer<T[Key]>;
+      } & {
+        [Key in keyof T & string as `${Key}In`]: InferIn<T[Key]>;
+      },
+      never
+    >
+  >;
+
+// Direct types
+
+export type ValidTypeOpts = {
+  Query?: Record<string, any>;
+  Params?: Record<string, any>;
+  Body?: Record<string, any>;
+  Headers?: Record<string, any>;
+  Output?: Record<string, any>;
+};
+export type ValidTypeCtx<T extends ValidTypeOpts> = {
+  params: unknown extends T["Params"] ? Default["Params"] : T["Params"];
+  query: unknown extends T["Query"] ? Default["Query"] : T["Query"];
+  body: unknown extends T["Body"] ? Default["Body"] : T["Body"];
+  headers: unknown extends T["Headers"] ? Default["Headers"] : T["Headers"];
+};
+
+export type ValidLazyTypeCtx<T extends ValidSchemaOpts> = {
+  parse: ParseInputsFn<ValidTypeCtx<T>>;
+};
+
+export type ValidTypeMeta<T extends ValidSchemaOpts> = Typify<
+  Strip<{ [Key in keyof T]: T[Key] }, never>
+>;
+
+// Misc
 
 export type Default = {
   Params: Record<string, string | undefined>;
@@ -64,3 +80,13 @@ export type OutputHandler<
   ctx: TCtx,
   meta: Readonly<TMetaIn>
 ) => Awaitable<TValue | Response>;
+
+export type InputTypeKey = "params" | "query" | "body" | "headers";
+
+export interface ParseInputsFn<T extends Record<InputTypeKey, any>> {
+  /** Parses the selected input part */
+  <TKey extends InputTypeKey>(key: T): Promise<T[TKey]>;
+
+  /** Parses all inputs and returns as an object */
+  (): Promise<T>;
+}

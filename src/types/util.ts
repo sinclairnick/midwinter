@@ -30,6 +30,10 @@ export type Strip<T, U> = {
   [Key in keyof T as [T[Key]] extends [U] ? never : Key]: T[Key];
 } & {};
 
+export type StripUnknown<T> = {
+  [Key in keyof T as unknown extends T[Key] ? never : Key]: T[Key];
+} & {};
+
 export type NonReadonly<T> = {
   -readonly [Key in keyof T]: T[Key];
 };

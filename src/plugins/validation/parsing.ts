@@ -1,5 +1,11 @@
 import { Infer, parse } from "schema-shift";
-import { Default, InputTypeKey, ParseInputsFn, ValidOpts } from "./types";
+import {
+  Default,
+  InputTypeKey,
+  ParseInputsFn,
+  ValidSchemaOpts,
+  ValidSchemaCtx,
+} from "./types";
 
 const cached = <T extends () => any>(fn: T) => {
   let called = false;
@@ -13,7 +19,7 @@ const cached = <T extends () => any>(fn: T) => {
   };
 };
 
-export type ParseOpts = ValidOpts & {
+export type ParseOpts = ValidSchemaOpts & {
   path?: string;
 };
 
@@ -98,7 +104,10 @@ export const getCachedParsers = (req: Request, opts: ParseOpts) => {
   };
 };
 
-export const makeParseFn = <T extends ParseOpts>(req: Request, opts: T) => {
+export const makeParseFn = <T extends ParseOpts>(
+  req: Request,
+  opts: T
+): ParseInputsFn<ValidSchemaCtx<T>> => {
   const parsers = getCachedParsers(req, opts);
 
   const parse = async <T extends InputTypeKey>(key?: T) => {
@@ -121,10 +130,5 @@ export const makeParseFn = <T extends ParseOpts>(req: Request, opts: T) => {
     };
   };
 
-  return parse as ParseInputsFn<
-    unknown extends T["Params"] ? Default["Params"] : Infer<T["Params"]>,
-    unknown extends T["Query"] ? Default["Query"] : Infer<T["Query"]>,
-    unknown extends T["Body"] ? Default["Body"] : Infer<T["Body"]>,
-    unknown extends T["Headers"] ? Default["Headers"] : Infer<T["Headers"]>
-  >;
+  return parse;
 };

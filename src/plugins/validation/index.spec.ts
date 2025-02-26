@@ -4,6 +4,7 @@ import { init } from ".";
 import { InferCtx, InferMeta } from "../../midwinter/infer";
 import { ParseInputsFn } from "./types";
 import { Midwinter } from "midwinter";
+import { TypeKey, TypeOf } from "../util";
 
 describe("valid", () => {
   const mid = new Midwinter();
@@ -39,13 +40,9 @@ describe("valid", () => {
       type Ctx = InferCtx<typeof middleware>;
       type Meta = InferMeta<typeof middleware>;
 
-      expectTypeOf<Meta>().toMatchTypeOf<{
-        Query: typeof Query;
-      }>();
-
-      expectTypeOf<Ctx>().toMatchTypeOf<{
-        query: { foo: boolean };
-      }>();
+      expectTypeOf<Meta["Query"]>().toMatchTypeOf<typeof Query>();
+      expectTypeOf<Ctx["query"]>().toMatchTypeOf<{ foo: boolean }>();
+      expectTypeOf<Meta["~TQuery"]>().toMatchTypeOf<TypeOf<{ foo: boolean }>>();
     });
 
     test("Adds params to meta and ctx", () => {
@@ -113,6 +110,42 @@ describe("valid", () => {
         headers: { foo: boolean };
         foo: string;
       }>();
+    });
+
+    test("Parts work with type only", () => {
+      const middleware = new Midwinter().use(
+        valid<{
+          Query: { foo: boolean };
+          Params: { bar: boolean };
+          Output: { baz: boolean };
+        }>()
+      );
+
+      type Ctx = InferCtx<typeof middleware>;
+      type Meta = InferMeta<typeof middleware>;
+
+      expectTypeOf<keyof Ctx>().toMatchTypeOf<
+        "query" | "params" | "body" | "headers"
+      >();
+      expectTypeOf<Ctx["query"]>().toMatchTypeOf<{ foo: boolean }>();
+      expectTypeOf<Ctx["params"]>().toMatchTypeOf<{ bar: boolean }>();
+      expectTypeOf<keyof Meta>().toMatchTypeOf<
+        TypeKey<"Query"> | TypeKey<"Params"> | TypeKey<"Output">
+      >();
+      expectTypeOf<Meta["~TQuery"]>().toMatchTypeOf<TypeOf<{ foo: boolean }>>();
+      expectTypeOf<Meta["~TParams"]>().toMatchTypeOf<
+        TypeOf<{ bar: boolean }>
+      >();
+    });
+
+    test("Output type is enforced", () => {
+      const middleware = new Midwinter()
+        .use(valid<{ Output: { foo: boolean } }>())
+        .end(
+          output((req) => {
+            return { foo: 1 };
+          })
+        );
     });
   });
 
@@ -210,8 +243,11 @@ describe("validLazy", () => {
 
       type Ctx = InferCtx<typeof middleware>;
 
-      expectTypeOf<Ctx>().toMatchTypeOf<{
-        parse: ParseInputsFn;
+      expectTypeOf<Awaited<ReturnType<Ctx["parse"]>>>().toMatchTypeOf<{
+        query: Record<string, string | undefined>;
+        params: Record<string, string | undefined>;
+        body: unknown;
+        headers: Record<string, string | undefined>;
       }>();
     });
 
@@ -226,8 +262,8 @@ describe("validLazy", () => {
         Query: typeof Query;
       }>();
 
-      expectTypeOf<Ctx>().toMatchTypeOf<{
-        parse: ParseInputsFn<any, { foo: boolean }>;
+      expectTypeOf<Awaited<ReturnType<Ctx["parse"]>>>().toMatchTypeOf<{
+        query: { foo: boolean };
       }>();
     });
 
@@ -242,8 +278,8 @@ describe("validLazy", () => {
         Params: typeof Params;
       }>();
 
-      expectTypeOf<Ctx>().toMatchTypeOf<{
-        parse: ParseInputsFn<{ foo: boolean }>;
+      expectTypeOf<Awaited<ReturnType<Ctx["parse"]>>>().toMatchTypeOf<{
+        params: { foo: boolean };
       }>();
     });
 
@@ -258,8 +294,8 @@ describe("validLazy", () => {
         Body: typeof Body;
       }>();
 
-      expectTypeOf<Ctx>().toMatchTypeOf<{
-        parse: ParseInputsFn<any, any, { foo: boolean }>;
+      expectTypeOf<Awaited<ReturnType<Ctx["parse"]>>>().toMatchTypeOf<{
+        body: { foo: boolean };
       }>();
     });
 
@@ -274,8 +310,8 @@ describe("validLazy", () => {
         Headers: typeof Headers;
       }>();
 
-      expectTypeOf<Ctx>().toMatchTypeOf<{
-        parse: ParseInputsFn<any, any, any, { foo: boolean }>;
+      expectTypeOf<Awaited<ReturnType<Ctx["parse"]>>>().toMatchTypeOf<{
+        headers: { foo: boolean };
       }>();
     });
   });

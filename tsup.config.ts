@@ -1,7 +1,14 @@
 import { defineConfig } from "tsup";
 import { subExports } from "esbuild-sub-exports";
 
-const Exports = ["validation", "routing", "client-types", "cors", "otel"];
+const Exports = [
+  "validation",
+  "routing",
+  "client-types",
+  "cors",
+  "otel",
+  "util",
+];
 
 export default defineConfig({
   entry: {
