@@ -98,6 +98,20 @@ describe("Client Types", () => {
     }>();
   });
 
+  test("Infers based on type-only validation", () => {
+    const app = {
+      route: new Midwinter()
+        .use(route({ path: "/foo", method: "post" }))
+        .use(valid<{ Query: { limit: number } }>())
+        .end(() => Response.json({})),
+    };
+    type App = InferApp<typeof app>;
+
+    expectTypeOf<App["POST /foo"]["Query"]>().toEqualTypeOf<{
+      limit: number;
+    }>();
+  });
+
   test("Handles multiple routes overloading path", () => {
     const app = {
       routeA: new Midwinter()

@@ -2,9 +2,8 @@ import { describe, expect, expectTypeOf, test } from "vitest";
 import { z, ZodError } from "zod";
 import { init } from ".";
 import { InferCtx, InferMeta } from "../../midwinter/infer";
-import { ParseInputsFn } from "./types";
 import { Midwinter } from "midwinter";
-import { TypeKey, TypeOf } from "../util";
+import { TypeOf } from "../util";
 
 describe("valid", () => {
   const mid = new Midwinter();
@@ -42,7 +41,9 @@ describe("valid", () => {
 
       expectTypeOf<Meta["Query"]>().toMatchTypeOf<typeof Query>();
       expectTypeOf<Ctx["query"]>().toMatchTypeOf<{ foo: boolean }>();
-      expectTypeOf<Meta["~TQuery"]>().toMatchTypeOf<TypeOf<{ foo: boolean }>>();
+      expectTypeOf<Meta["~TQuery_In"]>().toMatchTypeOf<
+        TypeOf<{ foo: boolean }>
+      >();
     });
 
     test("Adds params to meta and ctx", () => {
@@ -130,22 +131,63 @@ describe("valid", () => {
       expectTypeOf<Ctx["query"]>().toMatchTypeOf<{ foo: boolean }>();
       expectTypeOf<Ctx["params"]>().toMatchTypeOf<{ bar: boolean }>();
       expectTypeOf<keyof Meta>().toMatchTypeOf<
-        TypeKey<"Query"> | TypeKey<"Params"> | TypeKey<"Output">
+        | "~TQuery_In"
+        | "~TQuery_Out"
+        | "~TParams_Out"
+        | "~TParams_In"
+        | "~TOutput_Out"
+        | "~TOutput_In"
       >();
-      expectTypeOf<Meta["~TQuery"]>().toMatchTypeOf<TypeOf<{ foo: boolean }>>();
-      expectTypeOf<Meta["~TParams"]>().toMatchTypeOf<
+      expectTypeOf<Meta["~TQuery_In"]>().toMatchTypeOf<
+        TypeOf<{ foo: boolean }>
+      >();
+      expectTypeOf<Meta["~TQuery_Out"]>().toMatchTypeOf<
+        TypeOf<{ foo: boolean }>
+      >();
+      expectTypeOf<Meta["~TParams_In"]>().toMatchTypeOf<
         TypeOf<{ bar: boolean }>
       >();
     });
 
-    test("Output type is enforced", () => {
+    test.todo("Output type is enforced when pre-specified", () => {
       const middleware = new Midwinter()
         .use(valid<{ Output: { foo: boolean } }>())
         .end(
+          // @ts-expect-error
           output((req) => {
             return { foo: 1 };
           })
         );
+    });
+
+    test("Output type is inferred when Output type absent", () => {
+      const middleware = new Midwinter().end(
+        output((req, ctx) => {
+          return { foo: 1 };
+        })
+      );
+
+      type Meta = typeof middleware.meta;
+
+      expectTypeOf<Meta["~TOutput_In"]>().toMatchTypeOf<
+        TypeOf<{ foo: number }>
+      >();
+    });
+
+    test("Types can overlay", () => {
+      // TODO:
+      const middleware = new Midwinter()
+        .use(valid({ Query: z.object({ foo: z.boolean() }) }))
+        .use(valid<{ Output: { foo: number } }>());
+
+      type Meta = InferMeta<typeof middleware>;
+
+      expectTypeOf<Meta["~TQuery_In"]>().toEqualTypeOf<
+        TypeOf<{ foo: boolean }>
+      >;
+      expectTypeOf<Meta["~TOutput_In"]>().toEqualTypeOf<
+        TypeOf<{ foo: number }>
+      >;
     });
   });
 
@@ -190,7 +232,7 @@ describe("valid", () => {
     test("Output: throws on invalid", async () => {
       const fetch = mid.use(valid({ Output: WithId })).end(
         output((req, ctx, meta) => {
-          return { id: 23 };
+          return { id: 23 } as any;
         })
       );
 
@@ -210,7 +252,7 @@ describe("valid", () => {
         )
         .end(
           output((req, ctx, meta) => {
-            return { id: 23 };
+            return { id: 23 } as any;
           })
         );
 

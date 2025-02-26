@@ -1,6 +1,6 @@
 import { AnyCtx, AnyMeta, Awaitable, Strip } from "@/types/util";
 import { Infer, InferIn, Parser } from "schema-shift";
-import { Typify } from "../util";
+import { TypeKey, Typify } from "../util";
 
 // Schema values
 
@@ -30,11 +30,11 @@ export type ValidSchemaMeta<T extends ValidSchemaOpts> = T &
     Strip<
       // In and Out Variants
       {
-        [Key in keyof T]: Infer<T[Key]>;
+        [Key in keyof T & string as `${Key}_Out`]: Infer<T[Key]>;
       } & {
-        [Key in keyof T & string as `${Key}In`]: InferIn<T[Key]>;
+        [Key in keyof T & string as `${Key}_In`]: InferIn<T[Key]>;
       },
-      never
+      [never, never]
     >
   >;
 
@@ -43,10 +43,11 @@ export type ValidSchemaMeta<T extends ValidSchemaOpts> = T &
 export type ValidTypeOpts = {
   Query?: Record<string, any>;
   Params?: Record<string, any>;
-  Body?: Record<string, any>;
   Headers?: Record<string, any>;
-  Output?: Record<string, any>;
+  Body?: unknown;
+  Output?: unknown;
 };
+
 export type ValidTypeCtx<T extends ValidTypeOpts> = {
   params: unknown extends T["Params"] ? Default["Params"] : T["Params"];
   query: unknown extends T["Query"] ? Default["Query"] : T["Query"];
@@ -54,12 +55,17 @@ export type ValidTypeCtx<T extends ValidTypeOpts> = {
   headers: unknown extends T["Headers"] ? Default["Headers"] : T["Headers"];
 };
 
-export type ValidLazyTypeCtx<T extends ValidSchemaOpts> = {
+export type ValidLazyTypeCtx<T extends ValidTypeOpts> = {
   parse: ParseInputsFn<ValidTypeCtx<T>>;
 };
 
-export type ValidTypeMeta<T extends ValidSchemaOpts> = Typify<
-  Strip<{ [Key in keyof T]: T[Key] }, never>
+export type ValidTypeMeta<T extends ValidTypeOpts> = Typify<
+  Strip<
+    { [Key in keyof T & string as `${Key}_Out`]: T[Key] } & {
+      [Key in keyof T & string as `${Key}_In`]: T[Key];
+    },
+    never
+  >
 >;
 
 // Misc
@@ -90,3 +96,6 @@ export interface ParseInputsFn<T extends Record<InputTypeKey, any>> {
   /** Parses all inputs and returns as an object */
   (): Promise<T>;
 }
+
+export type InferMetaOutputIn<TMeta extends AnyMeta> =
+  TMeta[TypeKey<"Output_In">];

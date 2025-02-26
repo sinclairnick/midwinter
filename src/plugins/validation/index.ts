@@ -8,11 +8,13 @@ import {
   ValidTypeMeta,
   ValidLazySchemaCtx,
   ValidLazyTypeCtx,
+  InferMetaOutputIn,
 } from "./types";
 import { makeParseFn } from "./parsing";
 import { parse } from "schema-shift";
-import { Midwinter, AnyCtx, AnyMeta, EndMiddlewareHandler } from "midwinter";
-import { InferTypeof, TypeKey, TypeOf, Typify } from "../util";
+import { Midwinter, AnyCtx, AnyMeta } from "midwinter";
+import { Typify } from "../util";
+import { EndMiddleware } from "@/middleware/types";
 
 export type * from "./types";
 export type * from "./parsing";
@@ -20,67 +22,32 @@ export type * from "./parsing";
 export interface ValidPlugin {
   // VALID
   // With types only
-  valid<T extends ValidTypeOpts>(): Midwinter<
+  /**
+   * Add synchronous parsing and validation, resulting in the
+   * query, params, body and headers being added to the ctx.
+   */
+  valid<T extends ValidTypeOpts = {}>(): Midwinter<
     ValidTypeCtx<T>,
     ValidTypeMeta<T>
   >;
   // With schema
-  valid<T extends ValidSchemaOpts>(
+  valid<T extends ValidSchemaOpts = {}>(
     opts: T
   ): Midwinter<ValidSchemaCtx<T>, ValidSchemaMeta<T>>;
 
   // VALIDLAZY
   // With types only
-  validLazy<T extends ValidTypeOpts>(): Midwinter<
+  validLazy<T extends ValidTypeOpts = {}>(): Midwinter<
     ValidLazyTypeCtx<T>,
-    ValidSchemaMeta<T>
+    ValidTypeMeta<T>
   >;
   // With schema
-  validLazy<T extends ValidSchemaOpts>(
+  /** Add lazy validation that can be triggered via the `ctx.parse()` function */
+  validLazy<T extends ValidSchemaOpts = {}>(
     opts: T
   ): Midwinter<ValidLazySchemaCtx<T>, ValidSchemaMeta<T>>;
 
-  output<
-    TCtx extends AnyCtx = AnyCtx,
-    TMeta extends AnyMeta = AnyMeta,
-    TValue extends any = InferTypeof<TMeta[TypeKey<"Output">]>
-  >(
-    handler: OutputHandler<TValue, TCtx, TMeta>,
-    opts?: ResponseInit
-  ): EndMiddlewareHandler<TCtx, TMeta>;
-}
-
-export const init = (): ValidPlugin => {
-  /**
-   * Add synchronous parsing and validation, resulting in the
-   * query, params, body and headers being added to the ctx.
-   */
-  function valid<T extends ValidSchemaOpts>(opts?: T) {
-    return new Midwinter(opts as T & Typify<ValidSchemaMeta<T>>).use(
-      async (req, _, meta) => {
-        const parse = makeParseFn(req, {
-          ...opts,
-          path: meta.path ? String(meta.path) : undefined,
-        });
-
-        return { ...(await parse()) };
-      }
-    );
-  }
-
-  /** Add lazy validation that can be triggered via the `ctx.parse()` function */
-  const validLazy = <T extends ValidSchemaOpts>(opts?: T) => {
-    return new Midwinter(opts as T & Typify<ValidSchemaMeta<T>>).use(
-      (req, _, meta) => {
-        return {
-          parse: makeParseFn(req, {
-            ...opts,
-            path: meta.path ? String(meta.path) : undefined,
-          }),
-        };
-      }
-    );
-  };
+  // OUTPUT
 
   /**
    * Parses the response type according to the valid.Output field and packages
@@ -88,26 +55,62 @@ export const init = (): ValidPlugin => {
    *
    * If no `Output` schema was provided, the result JSON.stringified without any validation.
    */
-  const output =
-    <
-      TValue extends any = unknown,
-      TCtx extends AnyCtx = AnyCtx,
-      TMeta extends AnyMeta = AnyMeta
-    >(
-      handler: OutputHandler<TValue, TCtx, TMeta>,
-      opts?: ResponseInit
-    ): EndMiddlewareHandler<TCtx, TMeta> =>
-    async (req, ctx, meta) => {
-      const data = await handler(req, ctx, meta);
+  output<
+    TCtx extends AnyCtx = AnyCtx,
+    TMeta extends AnyMeta = AnyMeta,
+    TValue extends InferMetaOutputIn<TMeta> = InferMetaOutputIn<TMeta>
+  >(
+    handler: OutputHandler<TValue, TCtx, TMeta>,
+    opts?: ResponseInit
+  ): EndMiddleware<
+    TCtx,
+    [InferMetaOutputIn<TMeta>] extends [never]
+      ? {}
+      : ValidTypeMeta<{ Output: TValue }>,
+    TMeta
+  >;
+}
 
-      if (data instanceof Response) {
-        return data;
-      }
+export const init = (): ValidPlugin => {
+  return {
+    valid<T extends ValidSchemaOpts>(opts?: T) {
+      return new Midwinter(opts as T & Typify<ValidSchemaMeta<T>>).use(
+        async (req, _, meta) => {
+          const parse = makeParseFn(req, {
+            ...opts,
+            path: meta.path ? String(meta.path) : undefined,
+          });
 
-      const outData = meta.Output ? await parse(meta.Output, data) : data;
+          return { ...(await parse()) };
+        }
+      );
+    },
+    validLazy<T extends ValidSchemaOpts>(opts?: T) {
+      return new Midwinter(opts as T & Typify<ValidSchemaMeta<T>>).use(
+        (req, _, meta) => {
+          return {
+            parse: makeParseFn(req, {
+              ...opts,
+              path: meta.path ? String(meta.path) : undefined,
+            }),
+          };
+        }
+      );
+    },
+    // Can't be bothered fixing this
+    // @ts-expect-error
+    output(handler, opts) {
+      return async (req, ctx, meta) => {
+        const data = await handler(req, ctx, meta);
 
-      return Response.json(outData ?? null, opts);
-    };
+        if (data instanceof Response) {
+          return data;
+        }
 
-  return { valid, validLazy, output };
+        const outData = meta.Output ? await parse(meta.Output, data) : data;
+
+        return Response.json(outData ?? null, opts);
+      };
+    },
+  };
 };

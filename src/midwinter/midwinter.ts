@@ -1,10 +1,10 @@
 import {
   AnyMiddleware,
   RequestHandler,
-  EndMiddlewareHandler,
   Middleware,
   MergeCtx,
   MergeMeta,
+  EndMiddleware,
 } from "../middleware/types";
 import { MiddlewareExecutor } from "../executor/executor";
 import { AnyCtx, AnyMeta } from "../types/util";
@@ -79,8 +79,10 @@ export class Midwinter<
   }
 
   end(): RequestHandler<TMeta, Response | undefined>;
-  end(middleware: EndMiddlewareHandler<TCtx, TMeta>): RequestHandler<TMeta>;
-  end(middleware?: EndMiddlewareHandler<TCtx, TMeta>) {
+  end<TMetaUpdate extends AnyMeta | void = void>(
+    middleware: EndMiddleware<TCtx, TMetaUpdate, TMeta>
+  ): RequestHandler<MergeMeta<TMetaUpdate, TMeta>>;
+  end(middleware?: EndMiddleware<TCtx, any, TMeta>) {
     const meta = Object.freeze(this.meta);
 
     const handler = async (request: Request) => {
