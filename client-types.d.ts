@@ -1,1 +1,1 @@
-export type * from "./dist/client-types.d.ts";
+export * from "./dist/client-types.ts";

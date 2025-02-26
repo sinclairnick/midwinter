@@ -1,1 +1,1 @@
-export type * from "./dist/routing.d.ts";
+export * from "./dist/routing.ts";

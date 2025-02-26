@@ -1,1 +1,1 @@
-export type * from "./dist/cors.d.ts";
+export * from "./dist/cors.ts";

@@ -1,1 +1,1 @@
-export type * from "./dist/otel.d.ts";
+export * from "./dist/otel.ts";
