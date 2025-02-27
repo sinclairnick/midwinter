@@ -88,24 +88,27 @@ export class Midwinter<
     const handler = async (request: Request) => {
       // Must be const to retain reference
       const ctx = {} as TCtx;
-
       const executor = new MiddlewareExecutor(this.middlewares);
 
-      let response: Response | undefined;
-
-      for await (const result of executor.pre(request, ctx, meta)) {
-        switch (result.type) {
-          case "response": {
-            response = result.response;
-            break;
-          }
-          case "update": {
-            for (const key in result.update) {
-              (ctx as any)[key] = result.update[key];
+      // Using a nested function because `break`ing was causing a
+      // strange bug by breaking in the _next_ iteration...
+      // Bun issue?
+      const runMiddleware = async (): Promise<Response | undefined> => {
+        for await (const result of executor.pre(request, ctx, meta)) {
+          switch (result.type) {
+            case "response": {
+              return result.response;
+            }
+            case "update": {
+              for (const key in result.update) {
+                (ctx as any)[key] = result.update[key];
+              }
             }
           }
         }
-      }
+      };
+
+      let response = await runMiddleware();
 
       if (response == null) {
         response = await middleware?.(request, ctx, meta);

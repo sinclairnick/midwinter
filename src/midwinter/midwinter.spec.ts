@@ -150,12 +150,37 @@ describe("Midwinter", () => {
       const app = new Midwinter();
 
       const handle = app
-        .use(() => Response.json({}))
+        .use(() => Response.json({ foo: true }))
+        .use(() => Response.json({ bar: true }))
         .end(() => {
-          return Response.json({});
+          return Response.json({ baz: true });
         });
 
-      await expect(handle(createReq())).resolves.toBeInstanceOf(Response);
+      const res = await handle(createReq());
+      const data = await res.json();
+
+      expect(data).toEqual({ foo: true });
+    });
+
+    test("Returns conditional early response", async () => {
+      const app = new Midwinter();
+
+      const handle = app
+        .use(() => {})
+        .use(() => {
+          if (1) {
+            return Response.json({ foo: true });
+          }
+          return {};
+        })
+        .end(() => {
+          return Response.json({ bar: true });
+        });
+
+      const res = await handle(createReq());
+      const data = await res.json();
+
+      expect(data).toEqual({ foo: true });
     });
 
     test("Allows void return", () => {
