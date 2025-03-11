@@ -150,7 +150,17 @@ describe("valid", () => {
       >();
     });
 
-    test.todo("Output type is enforced when pre-specified", () => {
+    test("Output type works when pre-specified", () => {
+      const middleware = new Midwinter()
+        .use(valid<{ Output: { foo: boolean } }>())
+        .end(
+          output((req) => {
+            return { foo: true };
+          })
+        );
+    });
+
+    test("Output type is enforced when pre-specified", () => {
       const middleware = new Midwinter()
         .use(valid<{ Output: { foo: boolean } }>())
         .end(

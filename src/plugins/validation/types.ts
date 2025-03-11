@@ -1,6 +1,6 @@
 import { AnyCtx, AnyMeta, Awaitable, Strip } from "@/types/util";
 import { Infer, InferIn, Parser } from "schema-shift";
-import { TypeKey, Typify } from "../util";
+import { TypeKey, TypeOf, Typify } from "../util";
 
 // Schema values
 
@@ -98,6 +98,6 @@ export interface ParseInputsFn<T extends Record<InputTypeKey, any>> {
 }
 
 export type InferMetaOutputIn<TMeta extends AnyMeta> =
-  TMeta[TypeKey<"Output_In">];
+  TMeta[TypeKey<"Output_In">] extends TypeOf<infer Inner> ? Inner : any;
 
 export type ParseQueryStringFn = (url: URL) => Record<PropertyKey, unknown>;

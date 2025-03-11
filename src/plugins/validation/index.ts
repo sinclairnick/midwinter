@@ -63,6 +63,8 @@ export interface ValidationPlugin {
   output<
     TCtx extends AnyCtx = AnyCtx,
     TMeta extends AnyMeta = AnyMeta,
+		// This approach is kind of convoluted to maintain both inference
+		// if no types specified, while enforcing types when specified
     TValue extends InferMetaOutputIn<TMeta> = InferMetaOutputIn<TMeta>
   >(
     handler: OutputHandler<TValue, TCtx, TMeta>,
