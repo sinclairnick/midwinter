@@ -91,8 +91,10 @@ export type InputTypeKey = "params" | "query" | "body" | "headers";
 
 export interface ParseInputsFn<T extends Record<InputTypeKey, any>> {
   /** Parses the selected input part */
-  <TKey extends InputTypeKey>(key: T): Promise<T[TKey]>;
+  <TKey extends InputTypeKey>(key: TKey): Promise<T[TKey]>;
 
+  // This one needs to be below the generic one
+  // for types to work.
   /** Parses all inputs and returns as an object */
   (): Promise<T>;
 }

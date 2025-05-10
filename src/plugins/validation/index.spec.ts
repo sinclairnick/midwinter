@@ -259,6 +259,28 @@ describe("valid", () => {
       expect(data).toEqual({ id: "123" });
     });
 
+    test("Allows multiple valid's to be called on body", async () => {
+      const middleware = mid
+        .use(valid({ Body: z.object({ id: z.string() }) }))
+        .use(valid({ Body: z.object({ id: z.string() }) }));
+
+      const handler = middleware.end(() => Response.json({ ok: true }));
+
+      const response = await handler(
+        new Request("http://google.com", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: "123",
+          }),
+        })
+      );
+
+      expect(response.ok).toBe(true);
+    });
+
     test("Output: throws on invalid", async () => {
       const fetch = mid.use(valid({ Output: WithId })).end(
         output((req, ctx, meta) => {

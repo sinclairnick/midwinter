@@ -74,7 +74,8 @@ export const parseParams = ((req, opts) => {
   return opts.Params ? parse(opts.Params, map) : map;
 }) satisfies ParserFn;
 
-export const parseBody = (async (req, opts) => {
+export const parseBody = (async (_req, opts) => {
+  const req = _req.clone();
   const contentType = req.headers.get("content-type");
 
   if (opts.Body) {
